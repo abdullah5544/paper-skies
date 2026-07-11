@@ -1014,9 +1014,10 @@ langSelect.addEventListener('change', async ()=>{
     readTranslated.classList.add('show');
     translateStatus.textContent = '';
   }catch(e){
+    const detail = (e?.message && e.message !== 'Failed to fetch') ? ` [${e.message}]` : ' [network]';
     translateStatus.textContent = DEMO
       ? 'Translation needs the backend — connect your Apps Script URL.'
-      : "Couldn't translate right now — pick the language again to retry.";
+      : "Couldn't translate — pick the language again to retry." + detail;
     langSelect.value = '';
   }
   translateBusy = false;
