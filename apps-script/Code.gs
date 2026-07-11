@@ -157,14 +157,22 @@ function findPII_(text){
   return null;
 }
 
-/* ---------------- AI translation (cached) ---------------- */
+/* ---------------- translation (FREE via Google Translate built-in) ----------------
+   Uses LanguageApp.translate — free, no API key needed.
+   If ANTHROPIC_API_KEY is ever added to Script Properties, Claude is used
+   instead for more nuanced, emotional translations. Both are cached 6h.  */
+
+const LANG_CODES = {
+  'English':'en','Spanish':'es','Arabic':'ar','French':'fr','German':'de',
+  'Portuguese':'pt','Turkish':'tr','Hindi':'hi','Indonesian':'id',
+  'Chinese':'zh','Japanese':'ja','Korean':'ko','Russian':'ru'
+};
 
 function translate_(req){
   const text = String(req.text || '').slice(0, 600);
   const lang = String(req.lang || 'English').slice(0, 24);
   if(!text) return {error:'empty'};
 
-  // cache: identical text+lang served free for 6 hours
   const cache = CacheService.getScriptCache();
   const digest = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, text + '|' + lang);
   const key = 'tr' + Utilities.base64EncodeWebSafe(digest).slice(0, 24);
@@ -172,33 +180,40 @@ function translate_(req){
   if(hit) return {ok:true, translation:hit, cached:true};
 
   const apiKey = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
-  if(!apiKey) return {error:'ANTHROPIC_API_KEY not set in Script Properties'};
+  let out = '';
 
-  const res = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
-    method: 'post',
-    contentType: 'application/json',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01'
-    },
-    payload: JSON.stringify({
-      model: MODEL,
-      max_tokens: 800,
-      messages: [{
-        role: 'user',
-        content: 'Translate the following anonymous message into ' + lang +
-                 '. Preserve its tone and emotion. Return ONLY the translation, nothing else.\n\n' + text
-      }]
-    }),
-    muteHttpExceptions: true
-  });
+  if(apiKey){
+    out = translateWithClaude_(text, lang, apiKey);
+  }
+  if(!out){
+    const code = LANG_CODES[lang] || 'en';
+    out = LanguageApp.translate(text, '', code);   // '' = auto-detect source
+  }
+  if(!out) return {error:'translation failed'};
 
-  const data = JSON.parse(res.getContentText());
-  if(data.error) return {error: data.error.message};
-
-  const out = (data.content || []).map(function(b){ return b.text || ''; }).join('\n').trim();
-  if(!out) return {error:'empty translation'};
-
-  cache.put(key, out, 21600);   // 6h
+  cache.put(key, out, 21600);
   return {ok:true, translation: out};
+}
+
+function translateWithClaude_(text, lang, apiKey){
+  try{
+    const res = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: {'x-api-key': apiKey, 'anthropic-version': '2023-06-01'},
+      payload: JSON.stringify({
+        model: MODEL,
+        max_tokens: 800,
+        messages: [{role:'user', content:
+          'Translate the following anonymous message into ' + lang +
+          '. Preserve its tone and emotion. Return ONLY the translation, nothing else.\n\n' + text}]
+      }),
+      muteHttpExceptions: true
+    });
+    const data = JSON.parse(res.getContentText());
+    if(data.error) return '';
+    return (data.content || []).map(function(b){ return b.text || ''; }).join('\n').trim();
+  }catch(err){
+    return '';
+  }
 }
