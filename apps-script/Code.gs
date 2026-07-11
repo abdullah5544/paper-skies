@@ -39,6 +39,7 @@ function handle_(req){
     if(action === 'list')      return json_(listMessages_());
     if(action === 'add')       return json_(addMessage_(req));
     if(action === 'hug')       return json_(hug_(req));
+    if(action === 'report')    return json_(report_(req));
     if(action === 'translate') return json_(translate_(req));
     return json_({error:'unknown action'});
   }catch(err){
@@ -58,10 +59,12 @@ function sheet_(){
   let sh = ss.getSheetByName('messages');
   if(!sh){
     sh = ss.insertSheet('messages');
-    sh.appendRow(['id','text','lang','mood','ts','hugs']);
+    sh.appendRow(['id','text','lang','mood','ts','hugs','reports']);
   }
   return sh;
 }
+
+const REPORT_LIMIT = 3;   // reports needed to auto-hide a message
 
 /* ---------------- actions ---------------- */
 
@@ -74,15 +77,18 @@ function listMessages_(){
 
   for(let i = 1; i < rows.length; i++){
     const ts = Number(rows[i][4]);
+    const reports = Number(rows[i][6]) || 0;
     if(now - ts <= WEEK_MS){
-      out.push({
-        id: String(rows[i][0]),
-        t:  String(rows[i][1]),
-        l:  String(rows[i][2]),
-        m:  String(rows[i][3]),
-        ts: ts,
-        h:  Number(rows[i][5]) || 0
-      });
+      if(reports < REPORT_LIMIT){
+        out.push({
+          id: String(rows[i][0]),
+          t:  String(rows[i][1]),
+          l:  String(rows[i][2]),
+          m:  String(rows[i][3]),
+          ts: ts,
+          h:  Number(rows[i][5]) || 0
+        });
+      }
     }else{
       hasExpired = true;
     }
@@ -120,6 +126,7 @@ function addMessage_(req){
     String(req.lang || 'en').slice(0, 8),
     String(req.mood || '').slice(0, 4),
     ts,
+    0,
     0
   ]);
 
@@ -144,16 +151,79 @@ function hug_(req){
   return {error:'not found'};
 }
 
-/* ---------------- PII guard (server side) ---------------- */
+function report_(req){
+  const id = String(req.id || '');
+  if(!id) return {error:'no id'};
+  const sh = sheet_();
+  const rows = sh.getDataRange().getValues();
+  for(let i = 1; i < rows.length; i++){
+    if(String(rows[i][0]) === id){
+      const r = (Number(rows[i][6]) || 0) + 1;
+      sh.getRange(i + 1, 7).setValue(r);
+      return {ok:true, hidden: r >= REPORT_LIMIT};
+    }
+  }
+  return {error:'not found'};
+}
+
+/* ---------------- content guard (server side — the real gate) ----------------
+   Layers:
+   1) normalize: Arabic-Indic digits → Latin, spelled-out numbers → digits
+   2) total digit budget: 7+ digits anywhere = blocked (beats 05-075-673, dots, spaces)
+   3) contact info: emails, links, @handles, messenger apps + contact intent
+   4) solicitation: selling/promo/dating-contact patterns
+------------------------------------------------------------------------------ */
+
+var WORD_DIGITS_ = {
+  'zero':'0','one':'1','two':'2','three':'3','four':'4','five':'5',
+  'six':'6','seven':'7','eight':'8','nine':'9','oh':'0',
+  'صفر':'0','واحد':'1','اثنين':'2','اثنان':'2','ثنين':'2',
+  'ثلاثه':'3','ثلاثة':'3','اربعه':'4','اربعة':'4','أربعه':'4','أربعة':'4',
+  'خمسه':'5','خمسة':'5','سته':'6','ستة':'6','سبعه':'7','سبعة':'7',
+  'ثمانيه':'8','ثمانية':'8','تسعه':'9','تسعة':'9'
+};
+
+function normalizeDigits_(text){
+  // Arabic-Indic & Extended Arabic-Indic digits → Latin
+  var t = text.replace(/[\u0660-\u0669]/g, function(d){ return String(d.charCodeAt(0) - 0x0660); })
+              .replace(/[\u06F0-\u06F9]/g, function(d){ return String(d.charCodeAt(0) - 0x06F0); });
+  // spelled-out digit words → digits
+  t = t.replace(/[A-Za-z\u0600-\u06FF]+/g, function(w){
+    var k = w.toLowerCase();
+    return WORD_DIGITS_.hasOwnProperty(k) ? WORD_DIGITS_[k] : w;
+  });
+  return t;
+}
+
+var CONTACT_APPS_ = /(whats\s*app|واتس\s*اب|واتساب|واتس|وتساب|telegram|تلي?جرام|تلقرام|تليقرام|snap\s*chat|سناب|snap|insta(gram)?|انستا|انستقرام|انسقرام|tik\s*tok|تيك\s*توك|kik|signal|سيجنال|discord|ديسكورد|imo|ايمو|viber|فايبر|wechat|line\b|face\s*book|فيس\s*بوك|messenger|ماسنجر/i;
+var CONTACT_INTENT_ = /(add|follow|dm|inbox|message|msg|text|call|contact|reach|رقمي|رقمى|رقم\s|ضيف|أضيف|اضيف|ضيفو|تواصل|كلمو?ني|راسلو?ني|راسلني|ابعثو|تابعو?ني|عندي\s*(واتس|سناب|انستا))/i;
+var SOLICIT_ = /(للبيع|متوفر\s*(توصيل|طلب|كمية)|توصيل\s*لجميع|اسعار\s*خاصه|سعر\s*خاص|dm\s*to\s*(buy|order)|for\s*sale|selling\s|hit\s*me\s*up\s*(for|to)|منتجات\s*خاصه|بضاعه|بضاعة\s*(اصليه|أصلية|متوفره))/i;
+var DATING_ = /(تعارف|ابغى\s*(بنت|شب|ولد)|ابي\s*(بنت|شب|ولد)|ودي\s*اتعرف|بنات\s*(واتس|سناب|انستا)|شباب\s*(واتس|سناب)|hook\s*up|sugar\s*(daddy|baby)|onlyfans|اونلي\s*فانز)/i;
 
 function findPII_(text){
-  if(/[\w.+-]+@[\w-]+\.[\w.-]+/.test(text)) return 'email';
-  if(/(https?:\/\/|www\.)\S+/i.test(text))  return 'link';
-  const runs = text.match(/[+\d][\d\s\-().]{5,}\d/g) || [];
-  for(let i = 0; i < runs.length; i++){
-    if((runs[i].match(/\d/g) || []).length >= 8) return 'phone';
-  }
-  if(/(^|\s)@[a-z0-9_.]{3,}/i.test(text)) return 'handle';
+  var norm = normalizeDigits_(text);
+
+  // emails (incl. (at)/[at] obfuscation) & links
+  if(/[\w.+-]+\s*(@|＠|\(at\)|\[at\])\s*[\w-]+\s*(\.|\(dot\)|\[dot\])\s*\w+/i.test(norm)) return 'email';
+  if(/(https?:\/\/|www\.|\.com\b|\.net\b|\.io\b)/i.test(norm)) return 'link';
+
+  // digit budget: 7+ digits total, however they're split or written
+  var digits = (norm.match(/\d/g) || []).length;
+  if(digits >= 7) return 'phone';
+
+  // @handles
+  if(/(^|\s)@[a-z0-9_.]{3,}/i.test(norm)) return 'handle';
+
+  // messenger apps + intent to connect (or any digits at all)
+  if(CONTACT_APPS_.test(norm) && (CONTACT_INTENT_.test(norm) || digits >= 3)) return 'contact';
+
+  // "my number is..." style
+  if(/(my\s*(number|phone|cell)|رقمي|رقم\s*(جوالي|هاتفي|تلفوني))/i.test(norm)) return 'contact';
+
+  // selling / promo / dating solicitation
+  if(SOLICIT_.test(norm)) return 'solicit';
+  if(DATING_.test(norm))  return 'solicit';
+
   return null;
 }
 
