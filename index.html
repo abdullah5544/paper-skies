@@ -175,6 +175,13 @@
   }
   #hugBtn:hover{transform:scale(1.06)}
   #hugBtn.hugged{background:#a34141;color:#fff;border-color:#a34141}
+  #reportBtn{
+    font-family:inherit;font-size:13px;cursor:pointer;
+    background:transparent;color:#8f854e;border:1.5px solid #d6c982;border-radius:999px;
+    padding:9px 12px;transition:all .15s;
+  }
+  #reportBtn:hover{background:#fff0f0;border-color:#e0a8a8;color:#a34141}
+  #reportBtn:disabled{opacity:.5;cursor:default}
   select{
     font-family:inherit;font-size:12px;font-weight:600;padding:9px 12px;border-radius:999px;
     border:1.5px solid #c9b96a;background:#fffdf0;color:var(--pad-ink);cursor:pointer;
@@ -290,6 +297,7 @@
     <div class="readFoot">
       <div class="readFootLeft">
         <button id="hugBtn">🤍 <span id="hugCount">0</span></button>
+        <button id="reportBtn" title="Report this note">🚩</button>
         <select id="langSelect" aria-label="Translate to">
           <option value="">🌐 Translate…</option>
           <option value="English">English</option>
@@ -373,6 +381,11 @@ async function apiAdd(msg){
 async function apiHug(id){
   if(DEMO || String(id).startsWith('local-') || String(id).startsWith('seed-')) return {ok:true};
   try{ return await api({action:'hug', id}); }catch(e){ return {error:1}; }
+}
+
+async function apiReport(id){
+  if(DEMO || String(id).startsWith('local-') || String(id).startsWith('seed-')) return {ok:true};
+  try{ return await api({action:'report', id}); }catch(e){ return {error:1}; }
 }
 
 async function apiTranslate(text, lang){
@@ -757,15 +770,41 @@ async function loadMessages(){
     `${planes.length} notes in the sky right now`;
 }
 
-/* ---------- PII guard ---------- */
+/* ---------- content guard (mirror of server rules) ---------- */
+const WORD_DIGITS = {zero:'0',one:'1',two:'2',three:'3',four:'4',five:'5',six:'6',seven:'7',eight:'8',nine:'9',oh:'0',
+  'صفر':'0','واحد':'1','اثنين':'2','اثنان':'2','ثنين':'2','ثلاثه':'3','ثلاثة':'3','اربعه':'4','اربعة':'4','أربعه':'4','أربعة':'4',
+  'خمسه':'5','خمسة':'5','سته':'6','ستة':'6','سبعه':'7','سبعة':'7','ثمانيه':'8','ثمانية':'8','تسعه':'9','تسعة':'9'};
+const CONTACT_APPS = /(whats\s*app|واتس\s*اب|واتساب|واتس|وتساب|telegram|تلي?جرام|تلقرام|تليقرام|snap\s*chat|سناب|snap|insta(gram)?|انستا|انستقرام|انسقرام|tik\s*tok|تيك\s*توك|kik|signal|سيجنال|discord|ديسكورد|imo|ايمو|viber|فايبر|wechat|line\b|face\s*book|فيس\s*بوك|messenger|ماسنجر/i;
+const CONTACT_INTENT = /(add|follow|dm|inbox|message|msg|text|call|contact|reach|رقمي|رقمى|رقم\s|ضيف|أضيف|اضيف|ضيفو|تواصل|كلمو?ني|راسلو?ني|راسلني|ابعثو|تابعو?ني|عندي\s*(واتس|سناب|انستا))/i;
+const SOLICIT = /(للبيع|متوفر\s*(توصيل|طلب|كمية)|توصيل\s*لجميع|اسعار\s*خاصه|سعر\s*خاص|dm\s*to\s*(buy|order)|for\s*sale|selling\s|hit\s*me\s*up\s*(for|to)|منتجات\s*خاصه|بضاعه|بضاعة\s*(اصليه|أصلية|متوفره)|تعارف|ابغى\s*(بنت|شب|ولد)|ابي\s*(بنت|شب|ولد)|ودي\s*اتعرف|بنات\s*(واتس|سناب|انستا)|شباب\s*(واتس|سناب)|hook\s*up|sugar\s*(daddy|baby)|onlyfans|اونلي\s*فانز)/i;
+
+function normalizeDigits(text){
+  let t = text.replace(/[\u0660-\u0669]/g, d => String(d.charCodeAt(0)-0x0660))
+              .replace(/[\u06F0-\u06F9]/g, d => String(d.charCodeAt(0)-0x06F0));
+  t = t.replace(/[A-Za-z\u0600-\u06FF]+/g, w => {
+    const k = w.toLowerCase();
+    return Object.prototype.hasOwnProperty.call(WORD_DIGITS,k) ? WORD_DIGITS[k] : w;
+  });
+  return t;
+}
+
 function findPII(text){
-  if(/[\w.+-]+@[\w-]+\.[\w.-]+/.test(text)) return 'That looks like an email address. Keep it anonymous — take it out and try again.';
-  if(/(https?:\/\/|www\.)\S+/i.test(text)) return 'No links allowed. Just your words.';
-  const runs = text.match(/[+\d][\d\s\-().]{5,}\d/g) || [];
-  for(const r of runs){
-    if((r.match(/\d/g)||[]).length >= 8) return 'That looks like a phone number. Keep it anonymous — take it out and try again.';
-  }
-  if(/(?:^|\s)@[a-z0-9_.]{3,}/i.test(text)) return 'No usernames or handles. Keep it anonymous.';
+  const norm = normalizeDigits(text);
+  if(/[\w.+-]+\s*(@|＠|\(at\)|\[at\])\s*[\w-]+\s*(\.|\(dot\)|\[dot\])\s*\w+/i.test(norm))
+    return 'That looks like an email address. This is a place to vent — not to connect.';
+  if(/(https?:\/\/|www\.|\.com\b|\.net\b|\.io\b)/i.test(norm))
+    return 'No links allowed. Just your words.';
+  const digits = (norm.match(/\d/g)||[]).length;
+  if(digits >= 7)
+    return 'Too many digits — that could be a phone number, however it\'s written. Take the numbers out.';
+  if(/(^|\s)@[a-z0-9_.]{3,}/i.test(norm))
+    return 'No usernames or handles. Keep it anonymous.';
+  if(CONTACT_APPS.test(norm) && (CONTACT_INTENT.test(norm) || digits >= 3))
+    return 'No exchanging contacts here. This is a place to let go — not to link up.';
+  if(/(my\s*(number|phone|cell)|رقمي|رقم\s*(جوالي|هاتفي|تلفوني))/i.test(norm))
+    return 'No phone numbers. Keep it anonymous.';
+  if(SOLICIT.test(norm))
+    return 'This sky is for feelings only — no selling, no promoting, no meetups.';
   return null;
 }
 
@@ -978,6 +1017,7 @@ function openMessage(msg, mesh){
   hugBtn.classList.toggle('hugged', !!store.get(hugKey));
   hugBtn.textContent = '';
   hugBtn.insertAdjacentHTML('beforeend', (store.get(hugKey)?'❤️ ':'🤍 ')+'<span id="hugCountSpan">'+(msg.h||0)+'</span>');
+  document.getElementById('reportBtn').disabled = !!store.get('ps_rep_'+(msg.id||msg.t.slice(0,20)));
   readOverlay.classList.add('show');
 }
 
@@ -991,6 +1031,27 @@ hugBtn.onclick = async ()=>{
   hugBtn.innerHTML = '❤️ <span>'+currentMsg.h+'</span>';
   chime();
   apiHug(currentMsg.id);
+};
+
+const reportBtn = document.getElementById('reportBtn');
+reportBtn.onclick = async ()=>{
+  if(!currentMsg) return;
+  const repKey = 'ps_rep_'+(currentMsg.id||currentMsg.t.slice(0,20));
+  if(store.get(repKey)){ toast('You already reported this one.'); return; }
+  if(!confirm('Report this note as inappropriate?')) return;
+  store.set(repKey, '1');
+  reportBtn.disabled = true;
+  apiReport(currentMsg.id);
+  // remove the plane from this user's sky immediately
+  const idx = planes.findIndex(p => p.msg === currentMsg || (currentMsg.id && p.msg.id === currentMsg.id));
+  if(idx > -1){
+    planesGroup.remove(planes[idx].mesh);
+    planes.splice(idx, 1);
+    updateCount();
+    highlighted = null;
+  }
+  closeRead();
+  toast('Reported 🚩 Thanks for keeping the skies clean.');
 };
 
 document.getElementById('closeReadBtn').onclick = closeRead;
