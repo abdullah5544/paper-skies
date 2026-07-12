@@ -39,6 +39,7 @@ function handle_(req){
     if(action === 'list')      return json_(listMessages_());
     if(action === 'add')       return json_(addMessage_(req));
     if(action === 'hug')       return json_(hug_(req));
+    if(action === 'view')      return json_(view_(req));
     if(action === 'report')    return json_(report_(req));
     if(action === 'translate') return json_(translate_(req));
     return json_({error:'unknown action'});
@@ -59,7 +60,7 @@ function sheet_(){
   let sh = ss.getSheetByName('messages');
   if(!sh){
     sh = ss.insertSheet('messages');
-    sh.appendRow(['id','text','lang','mood','ts','hugs','reports']);
+    sh.appendRow(['id','text','lang','mood','ts','hugs','reports','views']);
   }
   return sh;
 }
@@ -86,7 +87,8 @@ function listMessages_(){
           l:  String(rows[i][2]),
           m:  String(rows[i][3]),
           ts: ts,
-          h:  Number(rows[i][5]) || 0
+          h:  Number(rows[i][5]) || 0,
+          v:  Number(rows[i][7]) || 0
         });
       }
     }else{
@@ -127,6 +129,7 @@ function addMessage_(req){
     String(req.mood || '').slice(0, 4),
     ts,
     0,
+    0,
     0
   ]);
 
@@ -166,63 +169,85 @@ function report_(req){
   return {error:'not found'};
 }
 
-/* ---------------- content guard (server side — the real gate) ----------------
-   Layers:
-   1) normalize: Arabic-Indic digits → Latin, spelled-out numbers → digits
-   2) total digit budget: 7+ digits anywhere = blocked (beats 05-075-673, dots, spaces)
-   3) contact info: emails, links, @handles, messenger apps + contact intent
-   4) solicitation: selling/promo/dating-contact patterns
------------------------------------------------------------------------------- */
-
-var WORD_DIGITS_ = {
-  'zero':'0','one':'1','two':'2','three':'3','four':'4','five':'5',
-  'six':'6','seven':'7','eight':'8','nine':'9','oh':'0',
-  'صفر':'0','واحد':'1','اثنين':'2','اثنان':'2','ثنين':'2',
-  'ثلاثه':'3','ثلاثة':'3','اربعه':'4','اربعة':'4','أربعه':'4','أربعة':'4',
-  'خمسه':'5','خمسة':'5','سته':'6','ستة':'6','سبعه':'7','سبعة':'7',
-  'ثمانيه':'8','ثمانية':'8','تسعه':'9','تسعة':'9'
-};
-
-function normalizeDigits_(text){
-  // Arabic-Indic & Extended Arabic-Indic digits → Latin
-  var t = text.replace(/[\u0660-\u0669]/g, function(d){ return String(d.charCodeAt(0) - 0x0660); })
-              .replace(/[\u06F0-\u06F9]/g, function(d){ return String(d.charCodeAt(0) - 0x06F0); });
-  // spelled-out digit words → digits
-  t = t.replace(/[A-Za-z\u0600-\u06FF]+/g, function(w){
-    var k = w.toLowerCase();
-    return WORD_DIGITS_.hasOwnProperty(k) ? WORD_DIGITS_[k] : w;
-  });
-  return t;
+function view_(req){
+  const id = String(req.id || '');
+  if(!id) return {error:'no id'};
+  const sh = sheet_();
+  const rows = sh.getDataRange().getValues();
+  for(let i = 1; i < rows.length; i++){
+    if(String(rows[i][0]) === id){
+      const v = (Number(rows[i][7]) || 0) + 1;
+      sh.getRange(i + 1, 8).setValue(v);
+      return {ok:true, v:v};
+    }
+  }
+  return {error:'not found'};
 }
 
-var CONTACT_APPS_ = /(whats\s*app|واتس\s*اب|واتساب|واتس|وتساب|telegram|تلي?جرام|تلقرام|تليقرام|snap\s*chat|سناب|snap|insta(gram)?|انستا|انستقرام|انسقرام|tik\s*tok|تيك\s*توك|kik|signal|سيجنال|discord|ديسكورد|imo|ايمو|viber|فايبر|wechat|line\b|face\s*book|فيس\s*بوك|messenger|ماسنجر/i;
-var CONTACT_INTENT_ = /(add|follow|dm|inbox|message|msg|text|call|contact|reach|رقمي|رقمى|رقم\s|ضيف|أضيف|اضيف|ضيفو|تواصل|كلمو?ني|راسلو?ني|راسلني|ابعثو|تابعو?ني|عندي\s*(واتس|سناب|انستا))/i;
-var SOLICIT_ = /(للبيع|متوفر\s*(توصيل|طلب|كمية)|توصيل\s*لجميع|اسعار\s*خاصه|سعر\s*خاص|dm\s*to\s*(buy|order)|for\s*sale|selling\s|hit\s*me\s*up\s*(for|to)|منتجات\s*خاصه|بضاعه|بضاعة\s*(اصليه|أصلية|متوفره))/i;
-var DATING_ = /(تعارف|ابغى\s*(بنت|شب|ولد)|ابي\s*(بنت|شب|ولد)|ودي\s*اتعرف|بنات\s*(واتس|سناب|انستا)|شباب\s*(واتس|سناب)|hook\s*up|sugar\s*(daddy|baby)|onlyfans|اونلي\s*فانز)/i;
+/* ---------------- GLOBAL content guard (server side — the real gate) ----------------
+   Covers: every Unicode numeral system, spelled-out numbers in ~15 languages,
+   CJK numerals, obfuscated emails, links, handles, messenger apps in many
+   scripts, "my number" phrases, and selling/dating solicitation.           */
+
+var DIGIT_WORDS_ = (function(){
+  var w = ('zero one two three four five six seven eight nine oh '+
+    'cero uno dos tres cuatro cinco seis siete ocho nueve '+
+    'zéro un deux trois quatre cinq six sept huit neuf '+
+    'null eins zwei drei vier fünf funf sechs sieben acht neun '+
+    'um dois três tres oito nove '+
+    'due cinque sette otto '+
+    'sıfır sifir bir iki üç uc dört dort beş bes altı alti yedi sekiz dokuz '+
+    'ноль нуль один два три четыре пять шесть семь восемь девять '+
+    'nol satu dua tiga empat lima enam tujuh delapan sembilan '+
+    'صفر واحد اثنين اثنان ثنين ثلاثه ثلاثة اربعه اربعة أربعه أربعة خمسه خمسة سته ستة سبعه سبعة ثمانيه ثمانية تسعه تسعة '+
+    'یک سه چهار پنج شش هفت هشت نه '+
+    'ایک تین چار پانچ چھ سات آٹھ نو '+
+    'शून्य एक दो तीन चार पांच पाँच छह सात आठ नौ '+
+    '공 영 일 이 삼 사 오 육 칠 팔 구').split(/\s+/);
+  var s = {};
+  for(var i=0;i<w.length;i++) s[w[i]] = true;
+  return s;
+})();
+
+var CONTACT_APPS_ = /(whats\s*app|واتس\s*اب|واتساب|واتس|وتساب|telegram|تلي?جرام|تلقرام|تليقرام|ватсап|вотсап|вацап|телеграм|snap\s*chat|سناب|снап|snap|insta(gram)?|انستا|انستقرام|انسقرام|инста(грам)?|tik\s*tok|تيك\s*توك|тикток|kik\b|signal|سيجنال|discord|ديسكورد|дискорд|imo\b|ايمو|viber|فايبر|вайбер|wechat|weixin|微信|위챗|line\b|ライン|라인|kakao|카카오|카톡|face\s*book|فيس\s*بوك|фейсбук|messenger|ماسنجر|мессенджер|qq\b)/i;
+
+var CONTACT_INTENT_ = /(add\s*me|follow\s*me|dm\s*me|dm\b|inbox|message\s*me|msg\s*me|text\s*me|call\s*me|contact\s*me|hmu\b|agrega|agr[ée]game|a[ñn][áa]deme|escr[íi]beme|ll[áa]mame|ajoute|[ée]cris\s*moi|appelle\s*moi|adiciona|me\s*chama|manda\s*(msg|mensagem)|ekle\b|bana\s*yaz|beni\s*ara|добавь|напиши\s*мне|пиши\s*мне|звони|加我|私聊|联系我|連絡して|追加して|추가해|연락해|رقمي|رقمى|ضيفو?ني|أضيفو?ني|اضيفو?ني|تواصل\s*معي|كلمو?ني|راسلو?ني|تابعو?ني|عندي\s*(واتس|سناب|انستا))/i;
+
+var MY_NUMBER_ = /(my\s*(number|phone|cell|digits)|num[ée]ro|n[úu]mero|numara|nomor|телефон|номер|мой\s*номер|电话|手机号|微信号|電話番号|번호|رقمي|رقم\s*(جوالي|هاتفي|تلفوني|الواتس))/i;
+
+var SOLICIT_ = /(للبيع|متوفر\s*(توصيل|طلب|كمية)|توصيل\s*لجميع|اسعار\s*خاصه|سعر\s*خاص|بضاعه|بضاعة\s*(اصليه|أصلية|متوفره)|dm\s*to\s*(buy|order)|for\s*sale|selling\s|se\s*vende|vendo\b|à\s*vendre|satılık|продаю|出售|hit\s*me\s*up\s*(for|to)|تعارف|ابغى\s*(بنت|شب|ولد)|ابي\s*(بنت|شب|ولد)|ودي\s*اتعرف|بنات\s*(واتس|سناب|انستا)|شباب\s*(واتس|سناب)|hook\s*up|sugar\s*(daddy|baby)|onlyfans|اونلي\s*فانز|busco\s*(chica|novia|novio)|cherche\s*(fille|femme|meuf)|познакомлюсь|出会い)/i;
+
+var CJK_NUM_RUN_ = /[〇零一二三四五六七八九壱弐参]{6,}/;
 
 function findPII_(text){
-  var norm = normalizeDigits_(text);
-
-  // emails (incl. (at)/[at] obfuscation) & links
-  if(/[\w.+-]+\s*(@|＠|\(at\)|\[at\])\s*[\w-]+\s*(\.|\(dot\)|\[dot\])\s*\w+/i.test(norm)) return 'email';
-  if(/(https?:\/\/|www\.|\.com\b|\.net\b|\.io\b)/i.test(norm)) return 'link';
-
-  // digit budget: 7+ digits total, however they're split or written
-  var digits = (norm.match(/\d/g) || []).length;
+  // 1) digits in ANY numeral system
+  var digits = 0;
+  try{ digits = (text.match(/\p{Nd}/gu) || []).length; }
+  catch(e){ digits = (text.match(/[0-9\u0660-\u0669\u06F0-\u06F9\u0966-\u096F\u09E6-\u09EF\u0E50-\u0E59\uFF10-\uFF19]/g) || []).length; }
   if(digits >= 7) return 'phone';
 
-  // @handles
-  if(/(^|\s)@[a-z0-9_.]{3,}/i.test(norm)) return 'handle';
+  // 2) spelled-out numbers: 5+ digit-words in a row (any covered language)
+  var tokens = text.toLowerCase().split(/[^\p{L}]+/u).filter(function(t){return t;});
+  var run = 0;
+  for(var i=0;i<tokens.length;i++){
+    run = DIGIT_WORDS_[tokens[i]] ? run + 1 : 0;
+    if(run >= 5) return 'phone';
+  }
 
-  // messenger apps + intent to connect (or any digits at all)
-  if(CONTACT_APPS_.test(norm) && (CONTACT_INTENT_.test(norm) || digits >= 3)) return 'contact';
+  // 3) CJK numeral runs
+  if(CJK_NUM_RUN_.test(text)) return 'phone';
 
-  // "my number is..." style
-  if(/(my\s*(number|phone|cell)|رقمي|رقم\s*(جوالي|هاتفي|تلفوني))/i.test(norm)) return 'contact';
+  // 4) emails / links / handles
+  if(/[\w.+-]+\s*(@|＠|\(at\)|\[at\])\s*[\w-]+\s*(\.|\(dot\)|\[dot\])\s*\w+/i.test(text)) return 'email';
+  if(/(https?:\/\/|www\.|\.com\b|\.net\b|\.io\b|\.me\b)/i.test(text)) return 'link';
+  if(/(^|\s)@[a-z0-9_.]{3,}/i.test(text)) return 'handle';
 
-  // selling / promo / dating solicitation
-  if(SOLICIT_.test(norm)) return 'solicit';
-  if(DATING_.test(norm))  return 'solicit';
+  // 5) messenger apps + intent (or any digits at all)
+  if(CONTACT_APPS_.test(text) && (CONTACT_INTENT_.test(text) || digits >= 3)) return 'contact';
+  if(MY_NUMBER_.test(text)) return 'contact';
+
+  // 6) selling / promo / meetups
+  if(SOLICIT_.test(text)) return 'solicit';
 
   return null;
 }
