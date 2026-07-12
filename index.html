@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Paper Skies — get it off your chest</title>
-<meta name="description" content="An anonymous place to say the thing you can't tell anyone. Your note folds into a paper plane and orbits the Earth for 7 days — then it's gone forever.">
-<meta property="og:title" content="Paper Skies — get it off your chest">
-<meta property="og:description" content="Write it down. Fold it. Let it fly around the world. Anonymous notes orbiting Earth, gone in 7 days.">
+<title>Paper Skies — say the thing you can't tell anyone</title>
+<meta name="description" content="An anonymous place to get it off your chest. Your note folds into a paper plane and orbits the Earth for 7 days — read by strangers everywhere, then gone forever.">
+<meta property="og:title" content="Paper Skies 🛩️">
+<meta property="og:description" content="Say the thing you can't tell anyone. Your note becomes a paper plane orbiting Earth for 7 days, then it's gone forever.">
 <meta property="og:type" content="website">
-<meta name="theme-color" content="#05070f">
+<meta name="theme-color" content="#04060d">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛩️</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --space:#05070f;
+    --space:#04060d;
     --ink:#eef2ff;
     --dim:#8a93b5;
     --pad:#fdf6b8;
@@ -31,6 +31,10 @@
   body{background:var(--space);color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif}
   #scene{position:fixed;inset:0;display:block;cursor:grab}
   #scene.grabbing{cursor:grabbing}
+  #vignette{
+    position:fixed;inset:0;pointer-events:none;z-index:5;
+    background:radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(2,4,10,.55) 100%);
+  }
 
   /* ---------- top bar ---------- */
   header{
@@ -38,24 +42,33 @@
     display:flex;align-items:flex-start;justify-content:space-between;
     padding:14px 18px;pointer-events:none;
   }
-  .brand h1{font-size:19px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+  .brand h1{font-size:19px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-shadow:0 2px 12px rgba(0,0,0,.7)}
   .brand h1 span{color:var(--accent)}
   .brand p{font-size:11px;color:var(--dim)}
   .hud{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
   .chip{
     font-size:11px;color:var(--dim);
-    background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);
-    padding:6px 12px;border-radius:999px;backdrop-filter:blur(8px);
+    background:rgba(10,14,28,.45);border:1px solid rgba(255,255,255,.09);
+    padding:6px 12px;border-radius:999px;backdrop-filter:blur(10px);
     white-space:nowrap;
   }
   .chip b{color:var(--accent);font-weight:700}
-  #soundBtn{
+  .hudBtns{display:flex;gap:6px}
+  .hudBtn{
     pointer-events:auto;cursor:pointer;border:1px solid rgba(255,255,255,.09);
-    background:rgba(255,255,255,.05);color:var(--dim);
-    font-size:13px;padding:5px 11px;border-radius:999px;backdrop-filter:blur(8px);
+    background:rgba(10,14,28,.45);color:var(--dim);
+    font-size:12px;padding:5px 11px;border-radius:999px;backdrop-filter:blur(10px);
     font-family:inherit;transition:color .2s;
   }
-  #soundBtn.on{color:var(--accent)}
+  .hudBtn.on, .hudBtn:hover{color:var(--accent)}
+  #mineChip{
+    pointer-events:auto;cursor:pointer;display:none;
+    font-size:11px;color:var(--ink);
+    background:rgba(255,209,102,.12);border:1px solid rgba(255,209,102,.4);
+    padding:6px 12px;border-radius:999px;backdrop-filter:blur(10px);
+    animation:mineGlow 3s ease-in-out infinite;
+  }
+  @keyframes mineGlow{0%,100%{box-shadow:0 0 0 rgba(255,209,102,0)}50%{box-shadow:0 0 16px rgba(255,209,102,.25)}}
 
   /* ---------- bottom actions ---------- */
   footer{
@@ -63,32 +76,32 @@
     display:flex;flex-direction:column;align-items:center;gap:10px;
     padding:0 20px 22px;pointer-events:none;
   }
-  .hint{font-size:11px;color:var(--dim);text-align:center;text-shadow:0 1px 8px rgba(0,0,0,.8)}
+  .hint{font-size:11px;color:var(--dim);text-align:center;text-shadow:0 1px 8px rgba(0,0,0,.9)}
   .actions{display:flex;gap:10px;align-items:center}
   #writeBtn{
     pointer-events:auto;
     font-family:inherit;font-size:16px;font-weight:700;color:#3a2c05;
     background:linear-gradient(135deg,var(--accent),var(--accent-deep));
     border:none;border-radius:999px;padding:14px 32px;cursor:pointer;
-    box-shadow:0 6px 30px rgba(255,209,102,.35);
+    box-shadow:0 6px 30px rgba(255,209,102,.4), inset 0 1px 0 rgba(255,255,255,.5);
     transition:transform .15s ease, box-shadow .15s ease;
     letter-spacing:.3px;
   }
-  #writeBtn:hover{transform:translateY(-2px);box-shadow:0 10px 36px rgba(255,209,102,.5)}
+  #writeBtn:hover{transform:translateY(-2px);box-shadow:0 10px 40px rgba(255,209,102,.55), inset 0 1px 0 rgba(255,255,255,.5)}
   #catchBtn{
     pointer-events:auto;font-family:inherit;font-size:13px;font-weight:600;
-    color:var(--ink);background:rgba(255,255,255,.08);
-    border:1px solid rgba(255,255,255,.15);border-radius:999px;
-    padding:13px 20px;cursor:pointer;backdrop-filter:blur(8px);
+    color:var(--ink);background:rgba(10,14,28,.5);
+    border:1px solid rgba(255,255,255,.16);border-radius:999px;
+    padding:13px 20px;cursor:pointer;backdrop-filter:blur(10px);
     transition:transform .15s ease, background .2s;
   }
-  #catchBtn:hover{transform:translateY(-2px);background:rgba(255,255,255,.14)}
+  #catchBtn:hover{transform:translateY(-2px);background:rgba(255,255,255,.12)}
   #writeBtn:focus-visible,#catchBtn:focus-visible{outline:2px solid #fff;outline-offset:3px}
 
   /* ---------- overlays ---------- */
   .overlay{
     position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;
-    background:rgba(3,5,12,.62);backdrop-filter:blur(9px);
+    background:rgba(2,4,10,.66);backdrop-filter:blur(10px);
     opacity:0;pointer-events:none;transition:opacity .3s ease;padding:16px;
   }
   .overlay.show{opacity:1;pointer-events:auto}
@@ -103,7 +116,7 @@
     color:var(--pad-ink);
     border-radius:6px 6px 10px 10px;
     padding:20px 22px 16px 60px;
-    box-shadow:0 30px 80px rgba(0,0,0,.7), 0 2px 0 #e8df9a inset;
+    box-shadow:0 40px 100px rgba(0,0,0,.8), 0 2px 0 #e8df9a inset;
     position:relative;
   }
   .pad::before{
@@ -167,7 +180,7 @@
   }
   #readTranslated.show{display:block}
   .readFoot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;flex-wrap:wrap}
-  .readFootLeft{display:flex;gap:8px;align-items:center}
+  .readFootLeft{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   #hugBtn{
     font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
     background:#fff0f0;color:#a34141;border:1.5px solid #e0a8a8;border-radius:999px;
@@ -192,27 +205,33 @@
   /* ---------- toast ---------- */
   #toast{
     position:fixed;top:calc(64px + var(--safe-t));left:50%;transform:translateX(-50%) translateY(-8px);
-    z-index:60;background:rgba(20,28,48,.92);border:1px solid rgba(255,209,102,.35);
+    z-index:60;background:rgba(15,22,42,.94);border:1px solid rgba(255,209,102,.4);
     color:var(--ink);font-size:12px;padding:10px 18px;border-radius:999px;
-    opacity:0;transition:.3s ease;pointer-events:none;backdrop-filter:blur(6px);
+    opacity:0;transition:.3s ease;pointer-events:none;backdrop-filter:blur(8px);
     max-width:90vw;text-align:center;
   }
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
   /* ---------- intro ---------- */
   #intro{
-    position:fixed;inset:0;z-index:50;background:radial-gradient(ellipse at 50% 120%, #0c1226 0%, var(--space) 60%);
+    position:fixed;inset:0;z-index:50;
+    background:radial-gradient(ellipse at 50% 130%, #101a3a 0%, var(--space) 55%);
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
-    transition:opacity .9s ease;text-align:center;padding:20px;
+    transition:opacity 1s ease;text-align:center;padding:20px;overflow:hidden;
   }
   #intro.hide{opacity:0;pointer-events:none}
-  #intro .plane{font-size:46px;animation:hover 2.4s ease-in-out infinite;filter:drop-shadow(0 8px 24px rgba(255,209,102,.25))}
+  #intro .plane{font-size:46px;animation:hover 2.4s ease-in-out infinite;filter:drop-shadow(0 8px 24px rgba(255,209,102,.3))}
   @keyframes hover{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-12px) rotate(-2deg)}}
   #intro h2{font-size:30px;letter-spacing:3px;text-transform:uppercase}
   #intro h2 span{color:var(--accent)}
-  #intro .tag{font-family:'Caveat',cursive;font-size:22px;color:#c9d2f0}
+  #introTag{
+    font-family:'Caveat',cursive;font-size:23px;color:#c9d2f0;min-height:34px;
+    transition:opacity .4s ease;
+  }
   #intro p{font-size:12.5px;color:var(--dim);max-width:380px;line-height:21px}
   #introStats{font-size:11px;color:#5b6488;letter-spacing:1px;text-transform:uppercase}
+  .iStar{position:absolute;background:#fff;border-radius:50%;opacity:.6;animation:twk 3s ease-in-out infinite}
+  @keyframes twk{0%,100%{opacity:.15}50%{opacity:.8}}
 
   @media (prefers-reduced-motion: reduce){
     *{animation-duration:.01ms !important;transition-duration:.01ms !important}
@@ -224,17 +243,19 @@
     #catchBtn{font-size:12px;padding:11px 15px}
     .pad{padding-left:52px}
     #readText{font-size:24px}
+    .chip{font-size:10px;padding:5px 10px}
   }
 </style>
 </head>
 <body>
 
 <canvas id="scene"></canvas>
+<div id="vignette"></div>
 
 <div id="intro">
   <div class="plane">🛩️</div>
   <h2>Paper <span>Skies</span></h2>
-  <div class="tag">say the thing you can't tell anyone</div>
+  <div id="introTag">say the thing you can't tell anyone</div>
   <p>Write it down. It folds into a paper plane and flies around the world — anonymous, floating above everyone's heads for 7 days. Then it's gone forever.</p>
   <div id="introStats">connecting to the sky…</div>
 </div>
@@ -246,7 +267,11 @@
   </div>
   <div class="hud">
     <div class="chip"><b id="countOrbit">0</b> in orbit · <b id="countAll">0</b> ever released</div>
-    <button id="soundBtn" title="sound">🔇 sound</button>
+    <button id="mineChip">🛩️ your note · <b>❤️ <span id="mineHugs">0</span></b> · 👀 <span id="mineViews">0</span></button>
+    <div class="hudBtns">
+      <button class="hudBtn" id="shareBtn" title="share">↗ share</button>
+      <button class="hudBtn" id="soundBtn" title="sound">🔇 sound</button>
+    </div>
   </div>
 </header>
 
@@ -262,8 +287,8 @@
 <div class="overlay" id="composeOverlay">
   <div class="pad" id="composeCard">
     <div class="padTitle">Whatever's on your mind</div>
-    <div class="padSub">Nobody knows it's you. Just say it.</div>
-    <textarea id="msgInput" maxlength="500" placeholder="Type it out. The thing you can't tell anyone..."></textarea>
+    <div class="padSub">Any language. Nobody knows it's you. Just say it.</div>
+    <textarea id="msgInput" dir="auto" maxlength="500" placeholder="Type it out. The thing you can't tell anyone..."></textarea>
     <div class="moods" id="moodRow">
       <button class="mood sel" data-m="">💭 just a thought</button>
       <button class="mood" data-m="😔">😔 heavy</button>
@@ -280,7 +305,7 @@
         <button class="btn primary" id="sendBtn">Fold it &amp; let it fly 🛩️</button>
       </div>
     </div>
-    <div class="privacy">100% anonymous · visible to the whole world · self-destructs in 7 days · no emails, phone numbers, or links</div>
+    <div class="privacy">100% anonymous · visible to the whole world · self-destructs in 7 days · no contact info of any kind</div>
   </div>
 </div>
 
@@ -288,7 +313,7 @@
 <div class="overlay" id="readOverlay">
   <div class="pad" id="readCard">
     <div class="readMeta">
-      <span><span id="readMood"></span> <span id="readWhen"></span></span>
+      <span><span id="readMood"></span> <span id="readWhen"></span> <span id="readViews"></span></span>
       <span id="readGone"></span>
     </div>
     <div id="readText"></div>
@@ -325,69 +350,55 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 /* ============================================================
-   PAPER SKIES — production build for GitHub Pages
-   Backend: Google Apps Script (see apps-script/Code.gs)
+   PAPER SKIES v3 — photoreal Earth · global content guard · hooks
    ============================================================ */
 
-/* ▼▼▼ PASTE YOUR APPS SCRIPT WEB APP URL HERE ▼▼▼ */
 const API_URL = 'https://script.google.com/macros/s/AKfycbxpDFxetsktcNyA0M1FvyF1X5hZ99zjoOvIpS6ccwdCBlqjHH26BGBxBGBzk6q8bSA/exec';
-/* ▲▲▲ leave empty = demo mode (local only, no backend) ▲▲▲ */
 
 const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const WEEK = 7 * 24 * 60 * 60 * 1000;
 const DEMO = !API_URL;
+const TEX_BASE = 'https://unpkg.com/three-globe@2.31.0/example/img/';
 
-/* ---------- tiny safe localStorage (demo mode + cooldown) ---------- */
 const store = {
   get(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } },
   set(k,v){ try{ localStorage.setItem(k,v); }catch(e){} },
 };
 
 /* ============================================================
-   API layer
+   API
    ============================================================ */
 async function api(body){
   const res = await fetch(API_URL, {
     method:'POST',
-    headers:{'Content-Type':'text/plain;charset=utf-8'},   // avoids CORS preflight
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
     body: JSON.stringify(body)
   });
   return res.json();
 }
-
 async function apiList(){
   if(DEMO){
-    let local = [];
-    try{ local = JSON.parse(store.get('ps_demo')||'[]'); }catch(e){}
+    let local=[]; try{ local=JSON.parse(store.get('ps_demo')||'[]'); }catch(e){}
     local = local.filter(m => Date.now()-m.ts <= WEEK);
-    return {ok:true, total: 12000 + local.length, messages: local};
+    return {ok:true, total: 12000+local.length, messages: local};
   }
   try{ return await api({action:'list'}); }
-  catch(e){ console.log('list failed:', e?.message); return {ok:false, total:0, messages:[]}; }
+  catch(e){ return {ok:false, total:0, messages:[]}; }
 }
-
 async function apiAdd(msg){
   if(DEMO){
-    let local = [];
-    try{ local = JSON.parse(store.get('ps_demo')||'[]'); }catch(e){}
-    msg.id = 'local-'+Date.now();
-    local.push(msg); store.set('ps_demo', JSON.stringify(local.slice(-100)));
+    let local=[]; try{ local=JSON.parse(store.get('ps_demo')||'[]'); }catch(e){}
+    msg.id='local-'+Date.now(); local.push(msg);
+    store.set('ps_demo', JSON.stringify(local.slice(-100)));
     return {ok:true, id:msg.id};
   }
   try{ return await api({action:'add', text:msg.t, lang:msg.l, mood:msg.m||''}); }
-  catch(e){ return {error: e?.message||'network'}; }
+  catch(e){ return {error:e?.message||'network'}; }
 }
-
-async function apiHug(id){
-  if(DEMO || String(id).startsWith('local-') || String(id).startsWith('seed-')) return {ok:true};
-  try{ return await api({action:'hug', id}); }catch(e){ return {error:1}; }
-}
-
-async function apiReport(id){
-  if(DEMO || String(id).startsWith('local-') || String(id).startsWith('seed-')) return {ok:true};
-  try{ return await api({action:'report', id}); }catch(e){ return {error:1}; }
-}
-
+function isLocalId(id){ return DEMO || String(id).startsWith('local-') || String(id).startsWith('seed-'); }
+async function apiHug(id){ if(isLocalId(id)) return; try{ await api({action:'hug', id}); }catch(e){} }
+async function apiView(id){ if(isLocalId(id)) return; try{ await api({action:'view', id}); }catch(e){} }
+async function apiReport(id){ if(isLocalId(id)) return; try{ await api({action:'report', id}); }catch(e){} }
 async function apiTranslate(text, lang){
   if(DEMO) throw new Error('demo');
   const r = await api({action:'translate', text, lang});
@@ -396,13 +407,16 @@ async function apiTranslate(text, lang){
 }
 
 /* ============================================================
-   three.js scene
+   THREE SCENE
    ============================================================ */
 const canvas = document.getElementById('scene');
 const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, .1, 400);
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, .1, 500);
 
 let camRadius = 3.2, targetRadius = 8.4;
 let camTheta = .6, camPhi = 1.2;
@@ -416,266 +430,226 @@ function resize(){
 }
 addEventListener('resize', resize); resize();
 
-scene.add(new THREE.AmbientLight(0x334466, .5));
-const sun = new THREE.DirectionalLight(0xfff2dd, 1.5);
-sun.position.set(8, 2.5, 6);
+scene.add(new THREE.AmbientLight(0x223355, .35));
+const SUN_DIR = new THREE.Vector3(8, 2.5, 6).normalize();
+const sun = new THREE.DirectionalLight(0xfff2dd, 1.6);
+sun.position.copy(SUN_DIR).multiplyScalar(10);
 scene.add(sun);
 
-/* ---------- stars + milky way ---------- */
-(function makeStars(){
+/* sun glow sprite far away */
+(function sunSprite(){
+  const c = document.createElement('canvas'); c.width=c.height=256;
+  const x = c.getContext('2d');
+  const g = x.createRadialGradient(128,128,0,128,128,128);
+  g.addColorStop(0,'rgba(255,244,214,1)');
+  g.addColorStop(.18,'rgba(255,236,180,.85)');
+  g.addColorStop(.45,'rgba(255,205,110,.25)');
+  g.addColorStop(1,'rgba(255,205,110,0)');
+  x.fillStyle=g; x.fillRect(0,0,256,256);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({
+    map:new THREE.CanvasTexture(c), blending:THREE.AdditiveBlending, depthWrite:false, transparent:true
+  }));
+  sp.position.copy(SUN_DIR).multiplyScalar(160);
+  sp.scale.setScalar(46);
+  scene.add(sp);
+})();
+
+/* ---------- twinkling stars (2 layers) + milky way ---------- */
+function starLayer(n, sizeMin, sizeMax, spread){
   const g = new THREE.BufferGeometry();
-  const n = 2200, pos = new Float32Array(n*3), col = new Float32Array(n*3);
+  const pos = new Float32Array(n*3), col = new Float32Array(n*3);
   for(let i=0;i<n;i++){
-    const r = 80 + Math.random()*140;
+    const r = 80 + Math.random()*spread;
     const t = Math.random()*Math.PI*2, p = Math.acos(2*Math.random()-1);
     pos[i*3]=r*Math.sin(p)*Math.cos(t); pos[i*3+1]=r*Math.cos(p); pos[i*3+2]=r*Math.sin(p)*Math.sin(t);
-    const w = .7+Math.random()*.3, tint = Math.random();
+    const w=.7+Math.random()*.3, tint=Math.random();
     col[i*3]=w; col[i*3+1]=w*(tint<.15?.85:1); col[i*3+2]=w*(tint<.15?.7:1);
   }
   g.setAttribute('position', new THREE.BufferAttribute(pos,3));
   g.setAttribute('color', new THREE.BufferAttribute(col,3));
-  scene.add(new THREE.Points(g, new THREE.PointsMaterial({vertexColors:true, size:.4, sizeAttenuation:true, transparent:true, opacity:.9})));
-})();
+  const m = new THREE.PointsMaterial({vertexColors:true, size:sizeMin+(sizeMax-sizeMin)*Math.random(), sizeAttenuation:true, transparent:true, opacity:.9});
+  const pts = new THREE.Points(g, m);
+  scene.add(pts);
+  return m;
+}
+const starA = starLayer(1400, .35, .45, 140);
+const starB = starLayer(900,  .5,  .6, 160);
 (function milkyWay(){
   const g = new THREE.BufferGeometry();
-  const n = 2600, pos = new Float32Array(n*3), col = new Float32Array(n*3);
-  const tilt = new THREE.Euler(.5, .3, .6);
+  const n=2600, pos=new Float32Array(n*3), col=new Float32Array(n*3);
+  const tilt = new THREE.Euler(.5,.3,.6);
   for(let i=0;i<n;i++){
-    const a = Math.random()*Math.PI*2;
-    const r = 90 + Math.random()*120;
-    const spread = (Math.random()+Math.random()+Math.random()-1.5) * 26;
-    const v = new THREE.Vector3(Math.cos(a)*r, spread, Math.sin(a)*r).applyEuler(tilt);
+    const a=Math.random()*Math.PI*2, r=90+Math.random()*120;
+    const spread=(Math.random()+Math.random()+Math.random()-1.5)*26;
+    const v=new THREE.Vector3(Math.cos(a)*r,spread,Math.sin(a)*r).applyEuler(tilt);
     pos[i*3]=v.x; pos[i*3+1]=v.y; pos[i*3+2]=v.z;
-    const warm = Math.random()<.3;
-    const b = .35+Math.random()*.45;
+    const warm=Math.random()<.3, b=.35+Math.random()*.45;
     col[i*3]=b*(warm?1:.85); col[i*3+1]=b*.85; col[i*3+2]=b*(warm?.75:1);
   }
   g.setAttribute('position', new THREE.BufferAttribute(pos,3));
   g.setAttribute('color', new THREE.BufferAttribute(col,3));
-  scene.add(new THREE.Points(g, new THREE.PointsMaterial({vertexColors:true, size:.55, sizeAttenuation:true, transparent:true, opacity:.5, depthWrite:false})));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({vertexColors:true,size:.55,sizeAttenuation:true,transparent:true,opacity:.5,depthWrite:false})));
 })();
 
 /* ---------- shooting stars ---------- */
 const shooters = [];
 function spawnShooter(){
   const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(-3.5,0,0)]);
-  const mat = new THREE.LineBasicMaterial({color:0xffffff, transparent:true, opacity:.9});
-  const line = new THREE.Line(geo, mat);
+  const line = new THREE.Line(geo, new THREE.LineBasicMaterial({color:0xffffff, transparent:true, opacity:.9}));
   const start = new THREE.Vector3((Math.random()-.5)*60, 18+Math.random()*22, -40-Math.random()*30);
   line.position.copy(start);
   const dir = new THREE.Vector3(-.8-Math.random()*.6, -.35-Math.random()*.3, .2).normalize();
-  line.lookAt(start.clone().add(dir));
-  line.rotateY(Math.PI/2);
+  line.lookAt(start.clone().add(dir)); line.rotateY(Math.PI/2);
   scene.add(line);
-  shooters.push({line, dir, speed: 26+Math.random()*18, life: 0});
+  shooters.push({line, dir, speed:26+Math.random()*18, life:0});
 }
 setInterval(()=>{ if(!REDUCED && Math.random()<.75 && shooters.length<3) spawnShooter(); }, 5200);
 
 /* ============================================================
-   REALISTIC EARTH
+   EARTH — instant procedural, upgrades to NASA Blue Marble +
+   night city lights + ocean sun-glint the moment textures load
    ============================================================ */
-const W = 2048, H = 1024;
-const lonlat = (lon,lat)=> [ (lon+180)/360*W, (90-lat)/180*H ];
-
-const CONTINENTS = {
-  northAmerica: [[-168,66],[-162,70],[-150,71],[-140,70],[-128,71],[-118,72],[-108,71],[-96,72],[-86,72],[-78,73],[-70,66],[-64,60],[-66,52],[-60,47],[-66,44],[-70,42],[-74,39],[-76,35],[-79,31],[-81,25],[-84,30],[-89,29],[-94,29],[-97,26],[-97,22],[-95,19],[-92,16],[-88,14],[-85,11],[-83,9],[-80,8],[-78,7],[-81,8],[-85,13],[-91,16],[-96,17],[-102,19],[-106,24],[-111,28],[-115,30],[-117,33],[-121,35],[-123,39],[-124,43],[-124,47],[-127,50],[-132,54],[-136,58],[-142,60],[-148,61],[-154,59],[-160,56],[-165,60],[-168,63]],
-  greenland: [[-46,60],[-40,63],[-32,66],[-24,69],[-20,73],[-19,77],[-25,81],[-35,83],[-48,82],[-58,79],[-62,75],[-58,71],[-53,67],[-49,63]],
-  southAmerica: [[-78,8],[-74,11],[-70,12],[-64,11],[-60,9],[-55,6],[-51,4],[-50,0],[-46,-2],[-40,-4],[-35,-7],[-35,-10],[-37,-14],[-39,-18],[-41,-22],[-46,-24],[-48,-28],[-52,-32],[-56,-35],[-58,-38],[-62,-40],[-64,-43],[-66,-47],[-68,-51],[-69,-54],[-72,-53],[-73,-48],[-72,-43],[-71,-38],[-71,-32],[-70,-26],[-70,-20],[-74,-16],[-77,-11],[-80,-6],[-81,-2],[-80,2],[-79,5]],
-  africa: [[-17,15],[-17,20],[-13,26],[-9,31],[-5,35],[0,37],[6,37],[11,37],[16,33],[21,33],[26,32],[32,31],[34,28],[35,24],[37,20],[40,16],[43,12],[48,11],[51,12],[51,8],[47,4],[43,0],[41,-5],[40,-11],[37,-16],[35,-20],[33,-25],[30,-30],[26,-34],[21,-35],[18,-33],[16,-29],[13,-23],[12,-17],[10,-11],[9,-5],[9,1],[7,4],[3,6],[-2,5],[-8,4],[-12,7],[-16,11]],
-  eurasia: [[-9,37],[-9,43],[-4,44],[-2,47],[-5,48],[-1,50],[3,52],[8,54],[9,57],[13,56],[18,56],[22,58],[26,60],[24,65],[26,70],[31,70],[38,68],[45,68],[52,69],[60,70],[68,72],[77,73],[86,75],[95,76],[104,77],[113,74],[122,73],[131,72],[140,72],[150,70],[160,70],[170,67],[178,65],[179,62],[172,61],[163,60],[158,55],[156,51],[151,46],[144,43],[137,38],[130,36],[126,32],[122,26],[119,22],[112,17],[108,12],[105,7],[103,2],[100,4],[98,9],[95,14],[92,18],[89,22],[85,20],[82,16],[79,10],[77,7],[74,12],[71,18],[68,22],[66,25],[61,25],[57,25],[54,26],[50,29],[48,29],[52,25],[57,23],[59,20],[55,16],[50,14],[45,13],[42,16],[39,20],[36,25],[34,28],[36,32],[36,36],[32,36],[28,36],[26,38],[26,40],[22,40],[19,41],[16,43],[13,44],[10,43],[6,43],[3,42],[-2,36],[-6,36]],
-  australia: [[114,-22],[113,-26],[114,-31],[116,-34],[119,-35],[124,-33],[128,-32],[132,-32],[135,-35],[138,-36],[141,-38],[145,-39],[148,-38],[150,-36],[152,-33],[153,-29],[153,-25],[150,-22],[147,-19],[145,-15],[142,-11],[139,-14],[136,-12],[133,-11],[130,-12],[127,-14],[124,-16],[121,-19],[117,-21]],
-};
-const ISLANDS = [
-  {c:[47,-19], rx:24, ry:60},{c:[-3,54], rx:22, ry:44},{c:[139,37], rx:16, ry:58},
-  {c:[110,-1], rx:70, ry:26},{c:[145,-6], rx:44, ry:22},{c:[172,-42],rx:14, ry:46},
-  {c:[-19,65], rx:22, ry:14},{c:[122,13], rx:16, ry:34},{c:[-61,-51],rx:12, ry:10},
-  {c:[-72,19], rx:26, ry:10},{c:[80,7], rx:9, ry:14},
-];
-
-function drawLand(ctx){
-  for(const key of Object.keys(CONTINENTS)){
-    const poly = CONTINENTS[key];
-    ctx.beginPath();
-    poly.forEach((pt,i)=>{
-      const [x,y] = lonlat(pt[0], pt[1]);
-      i ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
-    });
-    ctx.closePath(); ctx.fill();
-  }
-  for(const isl of ISLANDS){
-    const [x,y] = lonlat(isl.c[0], isl.c[1]);
-    ctx.beginPath();
-    ctx.ellipse(x, y, isl.rx, isl.ry, 0, 0, Math.PI*2);
-    ctx.fill();
-  }
-}
-
-function makeEarthMaps(){
-  const mask = document.createElement('canvas'); mask.width=W; mask.height=H;
-  const mx = mask.getContext('2d');
-  mx.fillStyle = '#fff'; drawLand(mx);
-
-  const terr = document.createElement('canvas'); terr.width=W; terr.height=H;
-  const tx = terr.getContext('2d');
-  const veg = tx.createLinearGradient(0,0,0,H);
-  veg.addColorStop(0,'#7d8f6a'); veg.addColorStop(.22,'#4c7a45');
-  veg.addColorStop(.42,'#3f7a3f'); veg.addColorStop(.5,'#4a8a46');
-  veg.addColorStop(.62,'#4c7a45'); veg.addColorStop(.82,'#6a8a5f'); veg.addColorStop(1,'#8a9a80');
-  tx.fillStyle = veg; tx.fillRect(0,0,W,H);
-  function desert(lon,lat,rx,ry,color='#c9a35f',alpha=.9){
-    const [x,y]=lonlat(lon,lat);
-    const g = tx.createRadialGradient(x,y,0,x,y,Math.max(rx,ry));
-    g.addColorStop(0,color); g.addColorStop(1,'rgba(201,163,95,0)');
-    tx.globalAlpha = alpha; tx.fillStyle = g;
-    tx.save(); tx.translate(x,y); tx.scale(rx/Math.max(rx,ry), ry/Math.max(rx,ry)); tx.translate(-x,-y);
-    tx.beginPath(); tx.arc(x,y,Math.max(rx,ry),0,7); tx.fill(); tx.restore();
-    tx.globalAlpha = 1;
-  }
-  desert(10,22,190,90); desert(45,24,90,60); desert(60,42,120,55,'#b9975c',.6);
-  desert(133,-25,110,60,'#c48a52',.85); desert(-108,34,70,45,'#c9a35f',.6);
-  desert(-69,-24,40,60,'#c2a06a',.55); desert(20,-24,60,45,'#c9a35f',.5);
-  for(let i=0;i<4200;i++){
-    tx.fillStyle = `rgba(90,80,60,${Math.random()*.12})`;
-    tx.fillRect(Math.random()*W, Math.random()*H, 2.5, 2.5);
-  }
-  const snowN = tx.createLinearGradient(0,0,0,H*.2);
-  snowN.addColorStop(0,'rgba(245,250,255,.95)'); snowN.addColorStop(1,'rgba(245,250,255,0)');
-  tx.fillStyle = snowN; tx.fillRect(0,0,W,H*.2);
-  const snowS = tx.createLinearGradient(0,H*.86,0,H);
-  snowS.addColorStop(0,'rgba(245,250,255,0)'); snowS.addColorStop(1,'rgba(245,250,255,.9)');
-  tx.fillStyle = snowS; tx.fillRect(0,H*.86,W,H*.14);
-  tx.globalCompositeOperation = 'destination-in';
-  tx.drawImage(mask,0,0);
-  tx.globalCompositeOperation = 'source-over';
-
-  const col = document.createElement('canvas'); col.width=W; col.height=H;
-  const cx = col.getContext('2d');
-  const oc = cx.createLinearGradient(0,0,0,H);
-  oc.addColorStop(0,'#0e2f57'); oc.addColorStop(.25,'#0f3f74');
-  oc.addColorStop(.5,'#11497f'); oc.addColorStop(.75,'#0f3f74'); oc.addColorStop(1,'#0e2f57');
-  cx.fillStyle = oc; cx.fillRect(0,0,W,H);
-  for(let i=0;i<900;i++){
-    const g = cx.createRadialGradient(0,0,0,0,0,20+Math.random()*60);
-    const deep = Math.random()<.5;
-    g.addColorStop(0, deep?'rgba(8,32,64,.25)':'rgba(40,110,160,.16)');
-    g.addColorStop(1,'rgba(0,0,0,0)');
-    cx.save(); cx.translate(Math.random()*W, Math.random()*H);
-    cx.fillStyle=g; cx.beginPath(); cx.arc(0,0,80,0,7); cx.fill(); cx.restore();
-  }
-  cx.save();
-  cx.filter = 'blur(6px)';
-  cx.fillStyle = 'rgba(60,160,170,.55)';
-  drawLand(cx);
-  cx.restore();
-  cx.drawImage(terr,0,0);
-  cx.fillStyle = '#f2f7fb';
-  cx.beginPath(); cx.moveTo(0,H);
-  for(let x=0;x<=W;x+=32) cx.lineTo(x, H - (26 + Math.sin(x*.02)*8 + Math.random()*10));
-  cx.lineTo(W,H); cx.closePath(); cx.fill();
-  cx.beginPath(); cx.moveTo(0,0);
-  for(let x=0;x<=W;x+=32) cx.lineTo(x, 14 + Math.sin(x*.015)*5 + Math.random()*8);
-  cx.lineTo(W,0); cx.closePath();
-  cx.fillStyle='rgba(240,248,255,.85)'; cx.fill();
-
-  const spec = document.createElement('canvas'); spec.width=W; spec.height=H;
-  const sx = spec.getContext('2d');
-  sx.fillStyle = '#9db8cc'; sx.fillRect(0,0,W,H);
-  sx.fillStyle = '#0a0a0a'; drawLand(sx);
-  sx.fillStyle = '#222'; sx.fillRect(0,0,W,40); sx.fillRect(0,H-40,W,40);
-
-  const bump = document.createElement('canvas'); bump.width=W; bump.height=H;
-  const bx = bump.getContext('2d');
-  bx.fillStyle = '#808080'; bx.fillRect(0,0,W,H);
-  bx.fillStyle = '#9a9a9a'; drawLand(bx);
-  for(let i=0;i<9000;i++){
-    const v = Math.random()<.5?60:200;
-    bx.fillStyle = `rgba(${v},${v},${v},.15)`;
-    bx.fillRect(Math.random()*W, Math.random()*H, 2, 2);
-  }
-  return {
-    map: new THREE.CanvasTexture(col),
-    specularMap: new THREE.CanvasTexture(spec),
-    bumpMap: new THREE.CanvasTexture(bump),
-  };
-}
-
 const EARTH_R = 2;
 const earthGroup = new THREE.Group();
 earthGroup.rotation.z = -23.4 * Math.PI/180;
 scene.add(earthGroup);
 
-const maps = makeEarthMaps();
+/* --- quick procedural placeholder (paints in <100ms) --- */
+function placeholderMap(){
+  const c=document.createElement('canvas'); c.width=512; c.height=256;
+  const x=c.getContext('2d');
+  const oc=x.createLinearGradient(0,0,0,256);
+  oc.addColorStop(0,'#0e2f57'); oc.addColorStop(.5,'#11497f'); oc.addColorStop(1,'#0e2f57');
+  x.fillStyle=oc; x.fillRect(0,0,512,256);
+  x.fillStyle='#3f7a3f';
+  [[120,90,55],[150,150,40],[280,95,45],[295,150,40],[380,100,55],[425,185,28],[70,60,20]].forEach(([cx,cy,r])=>{
+    x.beginPath(); x.ellipse(cx,cy,r,r*.62,0,0,7); x.fill();
+  });
+  x.fillStyle='rgba(240,248,255,.9)'; x.fillRect(0,0,512,12); x.fillRect(0,244,512,12);
+  const t=new THREE.CanvasTexture(c); t.encoding=THREE.sRGBEncoding; return t;
+}
 const earth = new THREE.Mesh(
   new THREE.SphereGeometry(EARTH_R, 96, 96),
-  new THREE.MeshPhongMaterial({
-    map: maps.map, specularMap: maps.specularMap,
-    specular: new THREE.Color(0x88aabb), shininess: 16,
-    bumpMap: maps.bumpMap, bumpScale: .035,
-  })
+  new THREE.MeshPhongMaterial({map: placeholderMap(), specular:new THREE.Color(0x334455), shininess:12})
 );
 earthGroup.add(earth);
 
+/* --- real Earth shader: day/night blend + city lights + specular ocean --- */
+function buildEarthShader(dayT, nightT, waterT){
+  return new THREE.ShaderMaterial({
+    uniforms:{
+      dayMap:{value:dayT}, nightMap:{value:nightT}, waterMap:{value:waterT},
+      sunDir:{value:SUN_DIR.clone()},
+    },
+    vertexShader:`
+      varying vec2 vUv; varying vec3 vN; varying vec3 vWp;
+      void main(){
+        vUv = uv;
+        vN = normalize(mat3(modelMatrix) * normal);
+        vec4 wp = modelMatrix * vec4(position, 1.0);
+        vWp = wp.xyz;
+        gl_Position = projectionMatrix * viewMatrix * wp;
+      }`,
+    fragmentShader:`
+      uniform sampler2D dayMap; uniform sampler2D nightMap; uniform sampler2D waterMap;
+      uniform vec3 sunDir;
+      varying vec2 vUv; varying vec3 vN; varying vec3 vWp;
+      void main(){
+        vec3 n = normalize(vN);
+        vec3 s = normalize(sunDir);
+        float d = dot(n, s);
+        vec3 day = texture2D(dayMap, vUv).rgb;
+        vec3 night = texture2D(nightMap, vUv).rgb;
+        float water = texture2D(waterMap, vUv).r;
+        float dayAmt = clamp(d * 1.15 + 0.12, 0.0, 1.0);
+        vec3 col = day * (0.06 + 1.05 * dayAmt);
+        // city lights fade in across the terminator
+        float nightAmt = smoothstep(0.08, -0.22, d);
+        col += night * night * vec3(1.0, 0.88, 0.62) * nightAmt * 1.6;
+        // sun glint on oceans
+        vec3 viewDir = normalize(cameraPosition - vWp);
+        vec3 h = normalize(s + viewDir);
+        float spec = pow(max(dot(n, h), 0.0), 48.0) * water * dayAmt;
+        col += vec3(1.0, 0.95, 0.8) * spec * 0.55;
+        // thin blue limb inside the disc
+        float fres = pow(1.0 - max(dot(n, viewDir), 0.0), 3.2);
+        col += vec3(0.22, 0.42, 0.85) * fres * 0.4;
+        gl_FragColor = vec4(col, 1.0);
+      }`,
+  });
+}
+
+(function loadRealEarth(){
+  const loader = new THREE.TextureLoader();
+  loader.setCrossOrigin('anonymous');
+  let day=null, night=null, water=null, failed=false;
+  function done(){
+    if(failed || !day || !night || !water) return;
+    day.encoding = THREE.sRGBEncoding;
+    night.encoding = THREE.sRGBEncoding;
+    day.anisotropy = night.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    const old = earth.material;
+    earth.material = buildEarthShader(day, night, water);
+    old.dispose();
+  }
+  loader.load(TEX_BASE+'earth-blue-marble.jpg', t=>{day=t;done();}, undefined, ()=>{failed=true;});
+  loader.load(TEX_BASE+'earth-night.jpg',       t=>{night=t;done();}, undefined, ()=>{failed=true;});
+  loader.load(TEX_BASE+'earth-water.png',       t=>{water=t;done();}, undefined, ()=>{failed=true;});
+})();
+
+/* clouds (procedural, always) */
 function cloudTexture(){
-  const c = document.createElement('canvas'); c.width=1024; c.height=512;
-  const x = c.getContext('2d'); x.clearRect(0,0,1024,512);
-  for(let i=0;i<140;i++){
-    const cy = 40 + Math.random()*432;
-    const scale = .5 + Math.random()*2.2;
-    const g = x.createRadialGradient(0,0,0,0,0,26);
-    g.addColorStop(0,`rgba(255,255,255,${.35+Math.random()*.3})`);
-    g.addColorStop(.6,'rgba(255,255,255,.14)');
+  const c=document.createElement('canvas'); c.width=1024; c.height=512;
+  const x=c.getContext('2d'); x.clearRect(0,0,1024,512);
+  for(let i=0;i<150;i++){
+    const cy=40+Math.random()*432, scale=.5+Math.random()*2.2;
+    const g=x.createRadialGradient(0,0,0,0,0,26);
+    g.addColorStop(0,`rgba(255,255,255,${.32+Math.random()*.28})`);
+    g.addColorStop(.6,'rgba(255,255,255,.12)');
     g.addColorStop(1,'rgba(255,255,255,0)');
-    x.save(); x.translate(Math.random()*1024, cy);
+    x.save(); x.translate(Math.random()*1024,cy);
     x.rotate((Math.random()-.5)*.7);
     x.scale(scale*(1.6+Math.random()), scale*.5);
     x.fillStyle=g; x.beginPath(); x.arc(0,0,26,0,7); x.fill(); x.restore();
   }
-  for(let i=0;i<60;i++){
-    const g = x.createRadialGradient(0,0,0,0,0,10);
-    g.addColorStop(0,'rgba(255,255,255,.5)'); g.addColorStop(1,'rgba(255,255,255,0)');
-    x.save(); x.translate(Math.random()*1024, 200+Math.random()*112);
-    x.fillStyle=g; x.beginPath(); x.arc(0,0,10,0,7); x.fill(); x.restore();
-  }
   return new THREE.CanvasTexture(c);
 }
 const clouds = new THREE.Mesh(
-  new THREE.SphereGeometry(EARTH_R*1.015, 96, 96),
-  new THREE.MeshLambertMaterial({map:cloudTexture(), transparent:true, opacity:.85, depthWrite:false})
+  new THREE.SphereGeometry(EARTH_R*1.013, 96, 96),
+  new THREE.MeshLambertMaterial({map:cloudTexture(), transparent:true, opacity:.75, depthWrite:false})
 );
 earthGroup.add(clouds);
 
-function fresnel(color, power, strength, side){
+/* atmosphere */
+function fresnelMat(color, power, strength, side){
   return new THREE.ShaderMaterial({
     vertexShader:`varying vec3 vN; varying vec3 vP;
-      void main(){ vN = normalize(normalMatrix * normal);
-        vec4 mv = modelViewMatrix * vec4(position,1.0); vP = mv.xyz;
-        gl_Position = projectionMatrix * mv; }`,
+      void main(){ vN=normalize(normalMatrix*normal);
+        vec4 mv=modelViewMatrix*vec4(position,1.0); vP=mv.xyz;
+        gl_Position=projectionMatrix*mv; }`,
     fragmentShader:`varying vec3 vN; varying vec3 vP;
-      void main(){ float f = pow(1.0 - abs(dot(normalize(vN), normalize(-vP))), ${power.toFixed(1)});
-        gl_FragColor = vec4(${color}) * f * ${strength.toFixed(2)}; }`,
-    blending: THREE.AdditiveBlending, side, transparent:true, depthWrite:false,
+      void main(){ float f=pow(1.0-abs(dot(normalize(vN),normalize(-vP))),${power.toFixed(1)});
+        gl_FragColor=vec4(${color})*f*${strength.toFixed(2)}; }`,
+    blending:THREE.AdditiveBlending, side, transparent:true, depthWrite:false,
   });
 }
-scene.add(new THREE.Mesh(new THREE.SphereGeometry(EARTH_R*1.13, 64, 64), fresnel('0.35,0.62,1.0,1.0', 2.6, 1.25, THREE.BackSide)));
-scene.add(new THREE.Mesh(new THREE.SphereGeometry(EARTH_R*1.02, 64, 64), fresnel('0.5,0.75,1.0,1.0', 4.0, 0.8, THREE.FrontSide)));
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(EARTH_R*1.14,64,64), fresnelMat('0.32,0.58,1.0,1.0',2.4,1.35,THREE.BackSide)));
 
-/* ---------- moon ---------- */
+/* moon */
 function moonTexture(){
-  const c = document.createElement('canvas'); c.width=256; c.height=128;
-  const x = c.getContext('2d');
+  const c=document.createElement('canvas'); c.width=256; c.height=128;
+  const x=c.getContext('2d');
   x.fillStyle='#b9b6ae'; x.fillRect(0,0,256,128);
   for(let i=0;i<160;i++){
-    const g = x.createRadialGradient(0,0,0,0,0,3+Math.random()*9);
+    const g=x.createRadialGradient(0,0,0,0,0,3+Math.random()*9);
     g.addColorStop(0,'rgba(90,88,82,.5)'); g.addColorStop(1,'rgba(90,88,82,0)');
-    x.save(); x.translate(Math.random()*256, Math.random()*128);
+    x.save(); x.translate(Math.random()*256,Math.random()*128);
     x.fillStyle=g; x.beginPath(); x.arc(0,0,12,0,7); x.fill(); x.restore();
   }
   return new THREE.CanvasTexture(c);
 }
-const moon = new THREE.Mesh(
-  new THREE.SphereGeometry(.45, 32, 32),
-  new THREE.MeshPhongMaterial({map:moonTexture(), shininess:2})
-);
+const moon = new THREE.Mesh(new THREE.SphereGeometry(.45,32,32),
+  new THREE.MeshPhongMaterial({map:moonTexture(), shininess:2}));
 scene.add(moon);
 let moonAngle = Math.random()*Math.PI*2;
 
@@ -685,9 +659,9 @@ let moonAngle = Math.random()*Math.PI*2;
 function planeGeometry(){
   const g = new THREE.BufferGeometry();
   const v = new Float32Array([
-     0,0, .9,   -.6,.03,-.65,   0,0,-.5,
-     0,0, .9,    0,0,-.5,       .6,.03,-.65,
-     0,0, .9,    0,-.22,-.45,   0,0,-.5
+     0,0,.9, -.6,.03,-.65, 0,0,-.5,
+     0,0,.9,  0,0,-.5,     .6,.03,-.65,
+     0,0,.9,  0,-.22,-.45, 0,0,-.5
   ]);
   g.setAttribute('position', new THREE.BufferAttribute(v,3));
   g.computeVertexNormals();
@@ -697,7 +671,7 @@ const planeGeo = planeGeometry();
 const MOOD_TINT = {'':0xffffff,'😔':0xcfd8ea,'❤️':0xffd6dc,'😤':0xffd9c2,'🎉':0xfff3b8,'🤫':0xe2d6f5};
 function planeMaterial(mood, hi){
   if(hi) return new THREE.MeshStandardMaterial({color:0xffe08a, side:THREE.DoubleSide, roughness:.4, emissive:0x5a4310});
-  return new THREE.MeshStandardMaterial({color: MOOD_TINT[mood]||0xffffff, side:THREE.DoubleSide, roughness:.55, emissive:0x333333});
+  return new THREE.MeshStandardMaterial({color:MOOD_TINT[mood]||0xffffff, side:THREE.DoubleSide, roughness:.55, emissive:0x3a3a3a});
 }
 
 const planes = [];
@@ -705,31 +679,29 @@ const planesGroup = new THREE.Group();
 scene.add(planesGroup);
 
 function orbitBasis(){
-  const inc = (Math.random()*70 - 35) * Math.PI/180;
+  const inc = (Math.random()*70-35)*Math.PI/180;
   const node = Math.random()*Math.PI*2;
-  const u = new THREE.Vector3(Math.cos(node), 0, Math.sin(node));
-  const v = new THREE.Vector3(-Math.sin(node)*Math.cos(inc), Math.sin(inc), Math.cos(node)*Math.cos(inc));
-  return {u, v};
+  const u = new THREE.Vector3(Math.cos(node),0,Math.sin(node));
+  const v = new THREE.Vector3(-Math.sin(node)*Math.cos(inc),Math.sin(inc),Math.cos(node)*Math.cos(inc));
+  return {u,v};
 }
-
 function addPlane(msg, opts={}){
-  if(msg.ts && Date.now() - msg.ts > WEEK) return null;
-  const {u, v} = orbitBasis();
+  if(msg.ts && Date.now()-msg.ts > WEEK) return null;
+  const {u,v} = orbitBasis();
   const R = EARTH_R + 1.15 + Math.random()*2.1;
   const mesh = new THREE.Mesh(planeGeo, planeMaterial(msg.m||''));
-  mesh.scale.setScalar(.22 + Math.random()*.08);
+  mesh.scale.setScalar(.22+Math.random()*.08);
   mesh.userData.msg = msg;
   planesGroup.add(mesh);
   const p = {mesh, msg, R, u, v,
-             speed: (.12 + Math.random()*.12) * (Math.random()<.5?1:-1),
-             phase: opts.phase ?? Math.random()*Math.PI*2,
-             wob: Math.random()*10};
+             speed:(.12+Math.random()*.12)*(Math.random()<.5?1:-1),
+             phase:opts.phase ?? Math.random()*Math.PI*2,
+             wob:Math.random()*10};
   planes.push(p);
   updateCount();
   return p;
 }
-
-function planePos(p, t){
+function planePos(p,t){
   const a = p.phase + t*p.speed;
   return new THREE.Vector3()
     .addScaledVector(p.u, Math.cos(a)*p.R)
@@ -739,10 +711,9 @@ function planePos(p, t){
 let allTime = 0;
 function updateCount(){
   document.getElementById('countOrbit').textContent = planes.length;
-  document.getElementById('countAll').textContent = allTime > planes.length ? allTime.toLocaleString() : planes.length;
+  document.getElementById('countAll').textContent = (allTime>planes.length?allTime:planes.length).toLocaleString();
 }
 
-/* seeds shown only while sky is empty / demo */
 const seeds = [
   {t:"I've been saying \"I'm fine\" at work for six months. I am not fine.", l:'en', m:'😔'},
   {t:"Moved to Denver for a fresh start. Eight months in, still zero real friends.", l:'en', m:'😔'},
@@ -758,95 +729,162 @@ const seeds = [
   {t:"J'ai peur de décevoir mes parents avec mes choix.", l:'fr', m:'🤫'},
 ];
 
+let lastVisitNew = 0;
 async function loadMessages(){
+  const lastVisit = Number(store.get('ps_visit')||0);
   const data = await apiList();
-  const msgs = (data?.messages || []).map(m => ({id:m.id, t:m.t, l:m.l, m:m.m||'', ts:Number(m.ts), h:Number(m.h)||0}));
+  const msgs = (data?.messages||[]).map(m=>({id:m.id,t:m.t,l:m.l,m:m.m||'',ts:Number(m.ts),h:Number(m.h)||0,v:Number(m.v)||0}));
   allTime = Number(data?.total)||0;
   if(msgs.length < 8){
-    seeds.forEach((s,i) => addPlane({id:'seed-'+i, t:s.t, l:s.l, m:s.m, ts: Date.now() - Math.random()*5.5*24*3600*1000, h: Math.floor(Math.random()*40), seed:true}));
+    seeds.forEach((s,i)=>addPlane({id:'seed-'+i,t:s.t,l:s.l,m:s.m,ts:Date.now()-Math.random()*5.5*24*3600*1000,h:Math.floor(Math.random()*40),v:Math.floor(Math.random()*200),seed:true}));
   }
-  msgs.forEach(m => addPlane(m));
-  document.getElementById('introStats').textContent =
-    `${planes.length} notes in the sky right now`;
+  msgs.forEach(m=>addPlane(m));
+  if(lastVisit) lastVisitNew = msgs.filter(m=>m.ts>lastVisit).length;
+  store.set('ps_visit', String(Date.now()));
+  document.getElementById('introStats').textContent = `${planes.length} notes in the sky right now`;
+  refreshMine(msgs);
 }
 
-/* ---------- content guard (mirror of server rules) ---------- */
-const WORD_DIGITS = {zero:'0',one:'1',two:'2',three:'3',four:'4',five:'5',six:'6',seven:'7',eight:'8',nine:'9',oh:'0',
-  'صفر':'0','واحد':'1','اثنين':'2','اثنان':'2','ثنين':'2','ثلاثه':'3','ثلاثة':'3','اربعه':'4','اربعة':'4','أربعه':'4','أربعة':'4',
-  'خمسه':'5','خمسة':'5','سته':'6','ستة':'6','سبعه':'7','سبعة':'7','ثمانيه':'8','ثمانية':'8','تسعه':'9','تسعة':'9'};
-const CONTACT_APPS = /(whats\s*app|واتس\s*اب|واتساب|واتس|وتساب|telegram|تلي?جرام|تلقرام|تليقرام|snap\s*chat|سناب|snap|insta(gram)?|انستا|انستقرام|انسقرام|tik\s*tok|تيك\s*توك|kik|signal|سيجنال|discord|ديسكورد|imo|ايمو|viber|فايبر|wechat|line\b|face\s*book|فيس\s*بوك|messenger|ماسنجر/i;
-const CONTACT_INTENT = /(add|follow|dm|inbox|message|msg|text|call|contact|reach|رقمي|رقمى|رقم\s|ضيف|أضيف|اضيف|ضيفو|تواصل|كلمو?ني|راسلو?ني|راسلني|ابعثو|تابعو?ني|عندي\s*(واتس|سناب|انستا))/i;
-const SOLICIT = /(للبيع|متوفر\s*(توصيل|طلب|كمية)|توصيل\s*لجميع|اسعار\s*خاصه|سعر\s*خاص|dm\s*to\s*(buy|order)|for\s*sale|selling\s|hit\s*me\s*up\s*(for|to)|منتجات\s*خاصه|بضاعه|بضاعة\s*(اصليه|أصلية|متوفره)|تعارف|ابغى\s*(بنت|شب|ولد)|ابي\s*(بنت|شب|ولد)|ودي\s*اتعرف|بنات\s*(واتس|سناب|انستا)|شباب\s*(واتس|سناب)|hook\s*up|sugar\s*(daddy|baby)|onlyfans|اونلي\s*فانز)/i;
-
-function normalizeDigits(text){
-  let t = text.replace(/[\u0660-\u0669]/g, d => String(d.charCodeAt(0)-0x0660))
-              .replace(/[\u06F0-\u06F9]/g, d => String(d.charCodeAt(0)-0x06F0));
-  t = t.replace(/[A-Za-z\u0600-\u06FF]+/g, w => {
-    const k = w.toLowerCase();
-    return Object.prototype.hasOwnProperty.call(WORD_DIGITS,k) ? WORD_DIGITS[k] : w;
-  });
-  return t;
+/* ---------- "your note" hook ---------- */
+function myIds(){
+  try{ return JSON.parse(store.get('ps_mine')||'[]'); }catch(e){ return []; }
 }
+function rememberMine(id){
+  const ids = myIds(); ids.push(id);
+  store.set('ps_mine', JSON.stringify(ids.slice(-10)));
+}
+let mineMsg = null;
+function refreshMine(msgs){
+  const ids = myIds(); if(!ids.length) return;
+  for(let i=ids.length-1;i>=0;i--){
+    const m = msgs.find(x=>x.id===ids[i]);
+    if(m){
+      mineMsg = m;
+      document.getElementById('mineHugs').textContent = m.h||0;
+      document.getElementById('mineViews').textContent = m.v||0;
+      document.getElementById('mineChip').style.display = 'inline-block';
+      return;
+    }
+  }
+}
+document.getElementById('mineChip').onclick = ()=>{
+  if(!mineMsg) return;
+  const p = planes.find(x=>x.msg.id===mineMsg.id);
+  if(p) openMessage(p.msg, p.mesh);
+};
 
-function findPII(text){
-  const norm = normalizeDigits(text);
-  if(/[\w.+-]+\s*(@|＠|\(at\)|\[at\])\s*[\w-]+\s*(\.|\(dot\)|\[dot\])\s*\w+/i.test(norm))
-    return 'That looks like an email address. This is a place to vent — not to connect.';
-  if(/(https?:\/\/|www\.|\.com\b|\.net\b|\.io\b)/i.test(norm))
-    return 'No links allowed. Just your words.';
-  const digits = (norm.match(/\d/g)||[]).length;
+/* ============================================================
+   GLOBAL CONTENT GUARD — every numeral system + 15 languages
+   ============================================================ */
+const DIGIT_WORDS = new Set(('zero one two three four five six seven eight nine oh '+
+  'cero uno dos tres cuatro cinco seis siete ocho nueve '+
+  'zéro un deux trois quatre cinq six sept huit neuf '+
+  'null eins zwei drei vier fünf funf sechs sieben acht neun '+
+  'um dois três tres oito nove '+
+  'due cinque sette otto '+
+  'sıfır sifir bir iki üç uc dört dort beş bes altı alti yedi sekiz dokuz '+
+  'ноль нуль один два три четыре пять шесть семь восемь девять '+
+  'nol satu dua tiga empat lima enam tujuh delapan sembilan '+
+  'صفر واحد اثنين اثنان ثنين ثلاثه ثلاثة اربعه اربعة أربعه أربعة خمسه خمسة سته ستة سبعه سبعة ثمانيه ثمانية تسعه تسعة '+
+  'یک سه چهار پنج شش هفت هشت نه '+
+  'ایک تین چار پانچ چھ سات آٹھ نو '+
+  'शून्य एक दो तीन चार पांच पाँच छह सात आठ नौ '+
+  '공 영 일 이 삼 사 오 육 칠 팔 구').split(/\s+/));
+
+const CONTACT_APPS = /(whats\s*app|واتس\s*اب|واتساب|واتس|وتساب|telegram|تلي?جرام|تلقرام|تليقرام|ватсап|вотсап|вацап|телеграм|snap\s*chat|سناب|снап|snap|insta(gram)?|انستا|انستقرام|انسقرام|инста(грам)?|tik\s*tok|تيك\s*توك|тикток|kik\b|signal|سيجنال|discord|ديسكورد|дискорд|imo\b|ايمو|viber|فايبر|вайбер|wechat|weixin|微信|위챗|line\b|ライン|라인|kakao|카카오|카톡|face\s*book|فيس\s*بوك|фейсбук|messenger|ماسنجر|мессенджер|qq\b)/i;
+
+const CONTACT_INTENT = /(add\s*me|follow\s*me|dm\s*me|dm\b|inbox|message\s*me|msg\s*me|text\s*me|call\s*me|contact\s*me|hmu\b|agrega|agr[ée]game|a[ñn][áa]deme|escr[íi]beme|ll[áa]mame|ajoute|[ée]cris\s*moi|appelle\s*moi|adiciona|me\s*chama|manda\s*(msg|mensagem)|ekle\b|bana\s*yaz|beni\s*ara|добавь|напиши\s*мне|пиши\s*мне|звони|加我|私聊|联系我|連絡して|追加して|추가해|연락해|رقمي|رقمى|ضيفو?ني|أضيفو?ني|اضيفو?ني|تواصل\s*معي|كلمو?ني|راسلو?ني|تابعو?ني|عندي\s*(واتس|سناب|انستا))/i;
+
+const MY_NUMBER = /(my\s*(number|phone|cell|digits)|num[ée]ro|n[úu]mero|numara|nomor|телефон|номер|мой\s*номер|电话|手机号|微信号|電話番号|번호|رقمي|رقم\s*(جوالي|هاتفي|تلفوني|الواتس))/i;
+
+const SOLICIT = /(للبيع|متوفر\s*(توصيل|طلب|كمية)|توصيل\s*لجميع|اسعار\s*خاصه|سعر\s*خاص|بضاعه|بضاعة\s*(اصليه|أصلية|متوفره)|dm\s*to\s*(buy|order)|for\s*sale|selling\s|se\s*vende|vendo\b|à\s*vendre|satılık|продаю|出售|hit\s*me\s*up\s*(for|to)|تعارف|ابغى\s*(بنت|شب|ولد)|ابي\s*(بنت|شب|ولد)|ودي\s*اتعرف|بنات\s*(واتس|سناب|انستا)|شباب\s*(واتس|سناب)|hook\s*up|sugar\s*(daddy|baby)|onlyfans|اونلي\s*فانز|busco\s*(chica|novia|novio)|cherche\s*(fille|femme|meuf)|познакомлюсь|出会い)/i;
+
+const CJK_NUM_RUN = /[〇零一二三四五六七八九壱弐参]{6,}/;
+
+function guardCheck(text){
+  // 1) every Unicode numeral system counts as a digit
+  let digits = 0;
+  try{ digits = (text.match(/\p{Nd}/gu)||[]).length; }
+  catch(e){ digits = (text.match(/[0-9\u0660-\u0669\u06F0-\u06F9\u0966-\u096F\u09E6-\u09EF\u0E50-\u0E59\uFF10-\uFF19]/g)||[]).length; }
   if(digits >= 7)
-    return 'Too many digits — that could be a phone number, however it\'s written. Take the numbers out.';
-  if(/(^|\s)@[a-z0-9_.]{3,}/i.test(norm))
+    return "Too many digits — that could be a phone number, however it's written. Take the numbers out.";
+  // 2) spelled-out numbers: 5+ digit-words in a row, any language
+  const tokens = text.toLowerCase().split(/[^\p{L}]+/u).filter(Boolean);
+  let run = 0;
+  for(const tk of tokens){
+    run = DIGIT_WORDS.has(tk) ? run+1 : 0;
+    if(run >= 5)
+      return "Spelling out a number doesn't work either 😉 This is a place to vent — not to connect.";
+  }
+  // 3) CJK numerals in a run
+  if(CJK_NUM_RUN.test(text))
+    return "That looks like a number. Keep it anonymous.";
+  // 4) email / links / handles
+  if(/[\w.+-]+\s*(@|＠|\(at\)|\[at\])\s*[\w-]+\s*(\.|\(dot\)|\[dot\])\s*\w+/i.test(text))
+    return 'That looks like an email address. This is a place to vent — not to connect.';
+  if(/(https?:\/\/|www\.|\.com\b|\.net\b|\.io\b|\.me\b)/i.test(text))
+    return 'No links allowed. Just your words.';
+  if(/(^|\s)@[a-z0-9_.]{3,}/i.test(text))
     return 'No usernames or handles. Keep it anonymous.';
-  if(CONTACT_APPS.test(norm) && (CONTACT_INTENT.test(norm) || digits >= 3))
+  // 5) messenger apps + intent (or any digits at all)
+  if(CONTACT_APPS.test(text) && (CONTACT_INTENT.test(text) || digits >= 3))
     return 'No exchanging contacts here. This is a place to let go — not to link up.';
-  if(/(my\s*(number|phone|cell)|رقمي|رقم\s*(جوالي|هاتفي|تلفوني))/i.test(norm))
+  if(MY_NUMBER.test(text))
     return 'No phone numbers. Keep it anonymous.';
-  if(SOLICIT.test(norm))
+  // 6) selling / promo / meetup solicitation
+  if(SOLICIT.test(text))
     return 'This sky is for feelings only — no selling, no promoting, no meetups.';
   return null;
 }
 
 /* ============================================================
-   SOUND (subtle whoosh + chime, WebAudio, off by default)
+   SOUND
    ============================================================ */
-let audioCtx = null, soundOn = false;
+let audioCtx=null, soundOn=false;
 const soundBtn = document.getElementById('soundBtn');
 soundBtn.onclick = ()=>{
   soundOn = !soundOn;
-  soundBtn.textContent = soundOn ? '🔊 sound' : '🔇 sound';
+  soundBtn.textContent = soundOn?'🔊 sound':'🔇 sound';
   soundBtn.classList.toggle('on', soundOn);
   if(soundOn && !audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
   if(soundOn) whoosh(.4);
 };
 function whoosh(vol=1){
-  if(!soundOn || !audioCtx) return;
-  const t = audioCtx.currentTime;
-  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate*1.2, audioCtx.sampleRate);
-  const d = buf.getChannelData(0);
-  for(let i=0;i<d.length;i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/d.length, 2);
-  const src = audioCtx.createBufferSource(); src.buffer = buf;
-  const filt = audioCtx.createBiquadFilter(); filt.type='bandpass'; filt.Q.value = 1.2;
-  filt.frequency.setValueAtTime(300,t); filt.frequency.exponentialRampToValueAtTime(2400,t+.9);
-  const g = audioCtx.createGain();
+  if(!soundOn||!audioCtx) return;
+  const t=audioCtx.currentTime;
+  const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*1.2,audioCtx.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
+  const src=audioCtx.createBufferSource(); src.buffer=buf;
+  const f=audioCtx.createBiquadFilter(); f.type='bandpass'; f.Q.value=1.2;
+  f.frequency.setValueAtTime(300,t); f.frequency.exponentialRampToValueAtTime(2400,t+.9);
+  const g=audioCtx.createGain();
   g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(.5*vol,t+.15);
   g.gain.exponentialRampToValueAtTime(.001,t+1.1);
-  src.connect(filt).connect(g).connect(audioCtx.destination);
-  src.start(t);
+  src.connect(f).connect(g).connect(audioCtx.destination); src.start(t);
 }
 function chime(){
-  if(!soundOn || !audioCtx) return;
-  const t = audioCtx.currentTime;
-  [523.25, 659.25, 783.99].forEach((f,i)=>{
-    const o = audioCtx.createOscillator(); o.type='sine'; o.frequency.value=f;
-    const g = audioCtx.createGain();
+  if(!soundOn||!audioCtx) return;
+  const t=audioCtx.currentTime;
+  [523.25,659.25,783.99].forEach((fr,i)=>{
+    const o=audioCtx.createOscillator(); o.type='sine'; o.frequency.value=fr;
+    const g=audioCtx.createGain();
     g.gain.setValueAtTime(0,t+i*.06); g.gain.linearRampToValueAtTime(.09,t+i*.06+.02);
     g.gain.exponentialRampToValueAtTime(.001,t+i*.06+.9);
     o.connect(g).connect(audioCtx.destination);
     o.start(t+i*.06); o.stop(t+i*.06+1);
   });
 }
+
+/* share */
+document.getElementById('shareBtn').onclick = async ()=>{
+  const data = {title:'Paper Skies 🛩️', text:"Say the thing you can't tell anyone. It flies around the world for 7 days, then it's gone.", url: location.href};
+  if(navigator.share){ try{ await navigator.share(data); }catch(e){} }
+  else{
+    try{ await navigator.clipboard.writeText(location.href); toast('Link copied 🔗 send someone the sky.'); }
+    catch(e){ toast(location.href); }
+  }
+};
 
 /* ============================================================
    CAMERA CONTROLS
@@ -862,12 +900,12 @@ canvas.addEventListener('pointermove', e=>{
   const dx=e.clientX-lastX, dy=e.clientY-lastY;
   moved += Math.abs(dx)+Math.abs(dy);
   targetTheta -= dx*.005;
-  targetPhi   = Math.min(2.6, Math.max(.5, targetPhi - dy*.004));
+  targetPhi = Math.min(2.6, Math.max(.5, targetPhi - dy*.004));
   lastX=e.clientX; lastY=e.clientY;
 });
 canvas.addEventListener('pointerup', e=>{
   dragging=false; canvas.classList.remove('grabbing');
-  if(moved < 8) pick(e.clientX, e.clientY);
+  if(moved<8) pick(e.clientX, e.clientY);
   setTimeout(()=>{ if(!dragging) autoSpin=true; }, 6000);
 });
 canvas.addEventListener('wheel', e=>{
@@ -875,79 +913,74 @@ canvas.addEventListener('wheel', e=>{
 },{passive:true});
 canvas.addEventListener('touchmove', e=>{
   if(e.touches.length===2){
-    const d = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
-    if(pinchDist) targetRadius = Math.min(24, Math.max(3.2, targetRadius + (pinchDist-d)*.02));
-    pinchDist = d;
+    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    if(pinchDist) targetRadius=Math.min(24,Math.max(3.2,targetRadius+(pinchDist-d)*.02));
+    pinchDist=d;
   }
 },{passive:true});
-canvas.addEventListener('touchend', ()=> pinchDist=0);
+canvas.addEventListener('touchend', ()=>pinchDist=0);
 
 const raycaster = new THREE.Raycaster();
-function pick(cx, cy){
-  const m = new THREE.Vector2((cx/innerWidth)*2-1, -(cy/innerHeight)*2+1);
-  raycaster.setFromCamera(m, camera);
-  const hits = raycaster.intersectObjects(planesGroup.children, false);
+function pick(cx,cy){
+  const m=new THREE.Vector2((cx/innerWidth)*2-1, -(cy/innerHeight)*2+1);
+  raycaster.setFromCamera(m,camera);
+  const hits=raycaster.intersectObjects(planesGroup.children,false);
   if(hits.length) openMessage(hits[0].object.userData.msg, hits[0].object);
 }
 
 /* ============================================================
    COMPOSE
    ============================================================ */
-const composeOverlay = document.getElementById('composeOverlay');
-const composeCard = document.getElementById('composeCard');
-const msgInput = document.getElementById('msgInput');
-const charCount = document.getElementById('charCount');
-const piiWarn = document.getElementById('piiWarn');
-const sendBtn = document.getElementById('sendBtn');
-let mood = '';
+const composeOverlay=document.getElementById('composeOverlay');
+const composeCard=document.getElementById('composeCard');
+const msgInput=document.getElementById('msgInput');
+const charCount=document.getElementById('charCount');
+const piiWarn=document.getElementById('piiWarn');
+const sendBtn=document.getElementById('sendBtn');
+let mood='';
 
 document.getElementById('moodRow').addEventListener('click', e=>{
-  const b = e.target.closest('.mood'); if(!b) return;
+  const b=e.target.closest('.mood'); if(!b) return;
   document.querySelectorAll('.mood').forEach(x=>x.classList.remove('sel'));
-  b.classList.add('sel');
-  mood = b.dataset.m;
+  b.classList.add('sel'); mood=b.dataset.m;
 });
 
-document.getElementById('writeBtn').onclick = ()=>{
+document.getElementById('writeBtn').onclick=()=>{
   composeOverlay.classList.add('show');
   composeCard.classList.remove('folding');
   piiWarn.classList.remove('show');
-  sendBtn.disabled = false;
-  targetRadius = 4.6;
-  setTimeout(()=>msgInput.focus(), 250);
+  sendBtn.disabled=false;
+  targetRadius=4.6;
+  setTimeout(()=>msgInput.focus(),250);
 };
-document.getElementById('cancelBtn').onclick = closeCompose;
+document.getElementById('cancelBtn').onclick=closeCompose;
 composeOverlay.addEventListener('click', e=>{ if(e.target===composeOverlay) closeCompose(); });
-function closeCompose(){ composeOverlay.classList.remove('show'); targetRadius = 8.4; }
+function closeCompose(){ composeOverlay.classList.remove('show'); targetRadius=8.4; }
 
 msgInput.addEventListener('input', ()=>{
-  charCount.textContent = msgInput.value.length + ' / 500';
+  charCount.textContent=msgInput.value.length+' / 500';
   piiWarn.classList.remove('show');
 });
 
-sendBtn.onclick = async ()=>{
-  const text = msgInput.value.trim();
-  if(text.length < 2){ toast('Write something first — anything on your mind 🤍'); return; }
-  const pii = findPII(text);
-  if(pii){ piiWarn.textContent = '🚫 ' + pii; piiWarn.classList.add('show'); return; }
+sendBtn.onclick=async ()=>{
+  const text=msgInput.value.trim();
+  if(text.length<2){ toast('Write something first — anything on your mind 🤍'); return; }
+  const bad=guardCheck(text);
+  if(bad){ piiWarn.textContent='🚫 '+bad; piiWarn.classList.add('show'); return; }
 
-  // 30s cooldown between sends
-  const lastSend = Number(store.get('ps_last')||0);
-  if(Date.now() - lastSend < 30000){
-    toast('Easy there ✋ one plane every 30 seconds.');
-    return;
-  }
+  const lastSend=Number(store.get('ps_last')||0);
+  if(Date.now()-lastSend<30000){ toast('Easy there ✋ one plane every 30 seconds.'); return; }
 
-  sendBtn.disabled = true;
-  const msg = {t:text, l:navigator.language?.slice(0,2)||'en', m:mood, ts:Date.now(), h:0};
-  const r = await apiAdd(msg);
-  if(r?.error === 'pii'){
-    sendBtn.disabled = false;
-    piiWarn.textContent = '🚫 Personal info detected. Keep it anonymous.';
+  sendBtn.disabled=true;
+  const msg={t:text, l:navigator.language?.slice(0,2)||'en', m:mood, ts:Date.now(), h:0, v:0};
+  const r=await apiAdd(msg);
+  if(r?.error==='pii'){
+    sendBtn.disabled=false;
+    piiWarn.textContent='🚫 Contact info or promotion detected. This sky is for feelings only.';
     piiWarn.classList.add('show');
     return;
   }
-  if(r?.id) msg.id = r.id;
+  if(r?.id){ msg.id=r.id; rememberMine(r.id); }
   store.set('ps_last', String(Date.now()));
   allTime++;
 
@@ -956,176 +989,211 @@ sendBtn.onclick = async ()=>{
   setTimeout(()=>{
     composeOverlay.classList.remove('show');
     msgInput.value=''; charCount.textContent='0 / 500';
-    sendBtn.disabled = false;
+    sendBtn.disabled=false;
     launch(msg);
-  }, REDUCED ? 50 : 1050);
+  }, REDUCED?50:1050);
 };
 
-let launching = null;
+let launching=null;
 function launch(msg){
-  const p = addPlane(msg, {phase:0});
-  const start = camera.position.clone()
+  const p=addPlane(msg,{phase:0});
+  const start=camera.position.clone()
     .add(new THREE.Vector3(0,-.7,0))
     .add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(1.4));
-  launching = {p, start, t0: perfT, dur: REDUCED? .1 : 3.4};
-  targetRadius = 8.4;
-  toast("It's up there now 🛩️ Circling the planet for 7 days, then gone forever.");
+  launching={p,start,t0:perfT,dur:REDUCED?.1:3.4};
+  targetRadius=8.4;
+  toast("It's up there now 🛩️ Come back to see who found it.");
+  mineMsg=msg;
+  document.getElementById('mineHugs').textContent=0;
+  document.getElementById('mineViews').textContent=0;
+  document.getElementById('mineChip').style.display='inline-block';
 }
 
-/* ============================================================
-   CATCH A RANDOM ONE
-   ============================================================ */
-document.getElementById('catchBtn').onclick = ()=>{
+/* catch a random one */
+function catchRandom(silent){
   if(!planes.length) return;
-  const p = planes[Math.floor(Math.random()*planes.length)];
-  // swing the camera toward that plane, then open it
-  const pos = planePos(p, perfT);
-  targetTheta = Math.atan2(pos.z, pos.x);
-  targetPhi = Math.max(.5, Math.min(2.6, Math.acos(pos.y / pos.length())));
-  whoosh(.5);
-  setTimeout(()=> openMessage(p.msg, p.mesh), REDUCED? 60 : 650);
-};
+  const p=planes[Math.floor(Math.random()*planes.length)];
+  const pos=planePos(p,perfT);
+  targetTheta=Math.atan2(pos.z,pos.x);
+  targetPhi=Math.max(.5,Math.min(2.6,Math.acos(pos.y/pos.length())));
+  if(!silent) whoosh(.5);
+  setTimeout(()=>openMessage(p.msg,p.mesh), REDUCED?60:650);
+}
+document.getElementById('catchBtn').onclick=()=>catchRandom(false);
 
 /* ============================================================
-   READ + HUG + TRANSLATE
+   READ + HUG + REPORT + TRANSLATE
    ============================================================ */
-const readOverlay = document.getElementById('readOverlay');
-const readText = document.getElementById('readText');
-const readTranslated = document.getElementById('readTranslated');
-const readWhen = document.getElementById('readWhen');
-const readGone = document.getElementById('readGone');
-const readMood = document.getElementById('readMood');
-const translateStatus = document.getElementById('translateStatus');
-const langSelect = document.getElementById('langSelect');
-const hugBtn = document.getElementById('hugBtn');
-const hugCount = document.getElementById('hugCount');
-let currentMsg = null, highlighted = null;
+const readOverlay=document.getElementById('readOverlay');
+const readText=document.getElementById('readText');
+const readTranslated=document.getElementById('readTranslated');
+const readWhen=document.getElementById('readWhen');
+const readGone=document.getElementById('readGone');
+const readMood=document.getElementById('readMood');
+const readViews=document.getElementById('readViews');
+const translateStatus=document.getElementById('translateStatus');
+const langSelect=document.getElementById('langSelect');
+const hugBtn=document.getElementById('hugBtn');
+let currentMsg=null, highlighted=null;
 
 function openMessage(msg, mesh){
-  currentMsg = msg;
-  if(highlighted) highlighted.material = planeMaterial(highlighted.userData.msg?.m||'');
-  highlighted = mesh; mesh.material = planeMaterial('', true);
-  readText.textContent = msg.t;
-  readText.dir = /[\u0600-\u06FF]/.test(msg.t) ? 'rtl' : 'ltr';
+  currentMsg=msg;
+  if(highlighted) highlighted.material=planeMaterial(highlighted.userData.msg?.m||'');
+  highlighted=mesh; mesh.material=planeMaterial('',true);
+  readText.textContent=msg.t;
+  readText.dir=/[\u0600-\u06FF\u0590-\u05FF]/.test(msg.t)?'rtl':'ltr';
   readTranslated.classList.remove('show'); readTranslated.textContent='';
   translateStatus.textContent=''; langSelect.value='';
-  readMood.textContent = msg.m || '';
-  readWhen.textContent = timeAgo(msg.ts);
-  readGone.textContent = goneIn(msg.ts);
-  hugCount.textContent = msg.h || 0;
-  const hugKey = 'ps_hug_'+(msg.id||msg.t.slice(0,20));
+  readMood.textContent=msg.m||'';
+  readWhen.textContent=timeAgo(msg.ts);
+  readViews.textContent=msg.v?`· 👀 ${msg.v}`:'';
+  readGone.textContent=goneIn(msg.ts);
+  const hugKey='ps_hug_'+(msg.id||msg.t.slice(0,20));
   hugBtn.classList.toggle('hugged', !!store.get(hugKey));
-  hugBtn.textContent = '';
-  hugBtn.insertAdjacentHTML('beforeend', (store.get(hugKey)?'❤️ ':'🤍 ')+'<span id="hugCountSpan">'+(msg.h||0)+'</span>');
-  document.getElementById('reportBtn').disabled = !!store.get('ps_rep_'+(msg.id||msg.t.slice(0,20)));
+  hugBtn.innerHTML=(store.get(hugKey)?'❤️ ':'🤍 ')+'<span>'+(msg.h||0)+'</span>';
+  document.getElementById('reportBtn').disabled=!!store.get('ps_rep_'+(msg.id||msg.t.slice(0,20)));
   readOverlay.classList.add('show');
+  msg.v=(msg.v||0)+1;
+  apiView(msg.id);
 }
 
-hugBtn.onclick = async ()=>{
+hugBtn.onclick=async ()=>{
   if(!currentMsg) return;
-  const hugKey = 'ps_hug_'+(currentMsg.id||currentMsg.t.slice(0,20));
-  if(store.get(hugKey)) return;                    // one hug per person
-  store.set(hugKey, '1');
-  currentMsg.h = (currentMsg.h||0)+1;
+  const hugKey='ps_hug_'+(currentMsg.id||currentMsg.t.slice(0,20));
+  if(store.get(hugKey)) return;
+  store.set(hugKey,'1');
+  currentMsg.h=(currentMsg.h||0)+1;
   hugBtn.classList.add('hugged');
-  hugBtn.innerHTML = '❤️ <span>'+currentMsg.h+'</span>';
+  hugBtn.innerHTML='❤️ <span>'+currentMsg.h+'</span>';
   chime();
   apiHug(currentMsg.id);
 };
 
-const reportBtn = document.getElementById('reportBtn');
-reportBtn.onclick = async ()=>{
+const reportBtn=document.getElementById('reportBtn');
+reportBtn.onclick=async ()=>{
   if(!currentMsg) return;
-  const repKey = 'ps_rep_'+(currentMsg.id||currentMsg.t.slice(0,20));
+  const repKey='ps_rep_'+(currentMsg.id||currentMsg.t.slice(0,20));
   if(store.get(repKey)){ toast('You already reported this one.'); return; }
   if(!confirm('Report this note as inappropriate?')) return;
-  store.set(repKey, '1');
-  reportBtn.disabled = true;
+  store.set(repKey,'1');
+  reportBtn.disabled=true;
   apiReport(currentMsg.id);
-  // remove the plane from this user's sky immediately
-  const idx = planes.findIndex(p => p.msg === currentMsg || (currentMsg.id && p.msg.id === currentMsg.id));
-  if(idx > -1){
+  const idx=planes.findIndex(p=>p.msg===currentMsg||(currentMsg.id&&p.msg.id===currentMsg.id));
+  if(idx>-1){
     planesGroup.remove(planes[idx].mesh);
-    planes.splice(idx, 1);
+    planes.splice(idx,1);
     updateCount();
-    highlighted = null;
+    highlighted=null;
   }
   closeRead();
   toast('Reported 🚩 Thanks for keeping the skies clean.');
 };
 
-document.getElementById('closeReadBtn').onclick = closeRead;
+document.getElementById('closeReadBtn').onclick=closeRead;
 readOverlay.addEventListener('click', e=>{ if(e.target===readOverlay) closeRead(); });
 function closeRead(){
   readOverlay.classList.remove('show');
-  if(highlighted){ highlighted.material = planeMaterial(highlighted.userData.msg?.m||''); highlighted=null; }
+  if(highlighted){ highlighted.material=planeMaterial(highlighted.userData.msg?.m||''); highlighted=null; }
 }
 
-let translateBusy = false;
+let translateBusy=false;
 langSelect.addEventListener('change', async ()=>{
-  const lang = langSelect.value;
-  if(!lang || !currentMsg || translateBusy) return;
-  translateBusy = true;
-  translateStatus.textContent = 'Translating… ✨';
+  const lang=langSelect.value;
+  if(!lang||!currentMsg||translateBusy) return;
+  translateBusy=true;
+  translateStatus.textContent='Translating… ✨';
   readTranslated.classList.remove('show');
   try{
-    const out = await apiTranslate(currentMsg.t, lang);
-    readTranslated.textContent = out;
-    readTranslated.dir = /[\u0600-\u06FF]/.test(out) ? 'rtl' : 'ltr';
+    const out=await apiTranslate(currentMsg.t, lang);
+    readTranslated.textContent=out;
+    readTranslated.dir=/[\u0600-\u06FF\u0590-\u05FF]/.test(out)?'rtl':'ltr';
     readTranslated.classList.add('show');
-    translateStatus.textContent = '';
+    translateStatus.textContent='';
   }catch(e){
-    const detail = (e?.message && e.message !== 'Failed to fetch') ? ` [${e.message}]` : ' [network]';
-    translateStatus.textContent = DEMO
+    translateStatus.textContent=DEMO
       ? 'Translation needs the backend — connect your Apps Script URL.'
-      : "Couldn't translate — pick the language again to retry." + detail;
-    langSelect.value = '';
+      : "Couldn't translate — pick the language again to retry.";
+    langSelect.value='';
   }
-  translateBusy = false;
+  translateBusy=false;
 });
 
 /* ---------- helpers ---------- */
 function toast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 3400);
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),3600);
 }
 function timeAgo(ts){
   if(!ts) return '';
-  const m = Math.max(1, Math.round((Date.now()-ts)/60000));
+  const m=Math.max(1,Math.round((Date.now()-ts)/60000));
   if(m<60) return `${m}m ago`;
-  const h = Math.round(m/60);
+  const h=Math.round(m/60);
   if(h<24) return `${h}h ago`;
   return `${Math.round(h/24)}d ago`;
 }
 function goneIn(ts){
   if(!ts) return 'anonymous';
-  const left = ts + WEEK - Date.now();
-  if(left <= 0) return 'fading away…';
-  const d = Math.floor(left/86400000), h = Math.floor((left%86400000)/3600000);
+  const left=ts+WEEK-Date.now();
+  if(left<=0) return 'fading away…';
+  const d=Math.floor(left/86400000), h=Math.floor((left%86400000)/3600000);
   return `🔥 gone in ${d}d ${h}h`;
 }
+
+/* intro tagline cycles through world languages */
+const TAGS=[
+  "say the thing you can't tell anyone",
+  "قل الشيء الذي لا تستطيع قوله لأحد",
+  "di lo que no puedes decirle a nadie",
+  "dis ce que tu ne peux dire à personne",
+  "söyleyemediğin şeyi burada söyle",
+  "скажи то, что не можешь сказать никому",
+  "誰にも言えないことを、ここで",
+  "말할 수 없던 그 한마디를 여기에",
+];
+let tagI=0;
+setInterval(()=>{
+  const el=document.getElementById('introTag');
+  if(!el || document.getElementById('intro').classList.contains('hide')) return;
+  el.style.opacity=0;
+  setTimeout(()=>{ tagI=(tagI+1)%TAGS.length; el.textContent=TAGS[tagI]; el.style.opacity=1; },400);
+},2600);
+
+/* intro star specks */
+(function introStars(){
+  const intro=document.getElementById('intro');
+  for(let i=0;i<40;i++){
+    const s=document.createElement('div');
+    s.className='iStar';
+    const sz=1+Math.random()*2;
+    s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*3}s`;
+    intro.appendChild(s);
+  }
+})();
 
 /* ============================================================
    LOOP
    ============================================================ */
-let perfT = 0, last = performance.now();
+let perfT=0, last=performance.now();
 function loop(now){
   requestAnimationFrame(loop);
-  const dt = Math.min(.05, (now-last)/1000); last = now;
-  perfT += dt;
+  const dt=Math.min(.05,(now-last)/1000); last=now;
+  perfT+=dt;
 
-  earth.rotation.y  += dt*.03;
-  clouds.rotation.y += dt*.041;
-  if(autoSpin && !dragging) targetTheta += dt*.02;
+  earth.rotation.y+=dt*.028;
+  clouds.rotation.y+=dt*.038;
+  if(autoSpin&&!dragging) targetTheta+=dt*.02;
 
-  moonAngle += dt*.02;
-  moon.position.set(Math.cos(moonAngle)*13, 3.2, Math.sin(moonAngle)*13);
-  moon.rotation.y += dt*.01;
+  starA.opacity=.75+Math.sin(perfT*1.7)*.15;
+  starB.opacity=.75+Math.sin(perfT*2.3+2)*.15;
 
-  camRadius += (targetRadius-camRadius)*Math.min(1, dt*2.2);
-  camTheta  += (targetTheta-camTheta)*Math.min(1, dt*6);
-  camPhi    += (targetPhi-camPhi)*Math.min(1, dt*6);
+  moonAngle+=dt*.02;
+  moon.position.set(Math.cos(moonAngle)*13,3.2,Math.sin(moonAngle)*13);
+  moon.rotation.y+=dt*.01;
+
+  camRadius+=(targetRadius-camRadius)*Math.min(1,dt*2.2);
+  camTheta+=(targetTheta-camTheta)*Math.min(1,dt*6);
+  camPhi+=(targetPhi-camPhi)*Math.min(1,dt*6);
   camera.position.set(
     camRadius*Math.sin(camPhi)*Math.cos(camTheta),
     camRadius*Math.cos(camPhi),
@@ -1134,52 +1202,62 @@ function loop(now){
   camera.lookAt(0,0,0);
 
   for(const p of planes){
-    if(launching && launching.p===p){
-      const k = Math.min(1, (perfT-launching.t0)/launching.dur);
-      const ease = 1-Math.pow(1-k,3);
-      const target = planePos(p, perfT);
-      p.mesh.position.lerpVectors(launching.start, target, ease);
-      p.mesh.lookAt(planePos(p, perfT+.1).lerp(camera.position, 1-ease));
+    if(launching&&launching.p===p){
+      const k=Math.min(1,(perfT-launching.t0)/launching.dur);
+      const ease=1-Math.pow(1-k,3);
+      const target=planePos(p,perfT);
+      p.mesh.position.lerpVectors(launching.start,target,ease);
+      p.mesh.lookAt(planePos(p,perfT+.1).lerp(camera.position,1-ease));
       if(k>=1) launching=null;
       continue;
     }
-    const pos = planePos(p, perfT);
-    pos.addScaledVector(pos.clone().normalize(), Math.sin(perfT*1.3+p.wob)*.05);
+    const pos=planePos(p,perfT);
+    pos.addScaledVector(pos.clone().normalize(),Math.sin(perfT*1.3+p.wob)*.05);
     p.mesh.position.copy(pos);
-    p.mesh.lookAt(planePos(p, perfT + (p.speed>0? .12 : -.12)));
+    p.mesh.lookAt(planePos(p,perfT+(p.speed>0?.12:-.12)));
     if(p.speed<0) p.mesh.rotateY(Math.PI);
     p.mesh.rotateZ(Math.sin(perfT+p.wob)*.15);
   }
 
   for(let i=shooters.length-1;i>=0;i--){
-    const s = shooters[i];
-    s.life += dt;
-    s.line.position.addScaledVector(s.dir, s.speed*dt);
-    s.line.material.opacity = Math.max(0, .9 - s.life*.55);
-    if(s.life > 1.8){ scene.remove(s.line); shooters.splice(i,1); }
+    const s=shooters[i];
+    s.life+=dt;
+    s.line.position.addScaledVector(s.dir,s.speed*dt);
+    s.line.material.opacity=Math.max(0,.9-s.life*.55);
+    if(s.life>1.8){ scene.remove(s.line); shooters.splice(i,1); }
   }
 
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
 requestAnimationFrame(loop);
 
 /* ---------- boot ---------- */
 (async function(){
+  const firstVisit=!store.get('ps_seen');
   await loadMessages();
   setTimeout(()=>{
     document.getElementById('intro').classList.add('hide');
-    targetRadius = 8.4;
-  }, REDUCED ? 200 : 1900);
-  // refresh sky every 90s to pull new planes from around the world
+    targetRadius=8.4;
+    if(firstVisit && !REDUCED){
+      store.set('ps_seen','1');
+      setTimeout(()=>{
+        toast('Someone left this in the sky for anyone to find…');
+        catchRandom(true);
+      },2400);
+    }else if(lastVisitNew>0){
+      setTimeout(()=>toast(`🛩️ ${lastVisitNew} new note${lastVisitNew>1?'s':''} flew in since your last visit.`),1800);
+    }
+  }, REDUCED?200:2100);
+
   if(!DEMO) setInterval(async ()=>{
-    const data = await apiList();
-    const known = new Set(planes.map(p=>p.msg.id));
-    (data?.messages||[]).forEach(m=>{
-      if(!known.has(m.id)) addPlane({id:m.id, t:m.t, l:m.l, m:m.m||'', ts:Number(m.ts), h:Number(m.h)||0});
-    });
-    allTime = Number(data?.total)||allTime;
+    const data=await apiList();
+    const known=new Set(planes.map(p=>p.msg.id));
+    const msgs=(data?.messages||[]).map(m=>({id:m.id,t:m.t,l:m.l,m:m.m||'',ts:Number(m.ts),h:Number(m.h)||0,v:Number(m.v)||0}));
+    msgs.forEach(m=>{ if(!known.has(m.id)) addPlane(m); });
+    allTime=Number(data?.total)||allTime;
     updateCount();
-  }, 90000);
+    refreshMine(msgs);
+  },90000);
 })();
 </script>
 </body>
