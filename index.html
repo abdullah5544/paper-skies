@@ -10,6 +10,12 @@
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#04060d">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛩️</text></svg>">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Paper Skies">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -269,6 +275,7 @@
     <div class="chip"><b id="countOrbit">0</b> in orbit · <b id="countAll">0</b> ever released</div>
     <button id="mineChip">🛩️ your note · <b>❤️ <span id="mineHugs">0</span></b> · 👀 <span id="mineViews">0</span></button>
     <div class="hudBtns">
+      <button class="hudBtn" id="installBtn" style="display:none">📲 install</button>
       <button class="hudBtn" id="shareBtn" title="share">↗ share</button>
       <button class="hudBtn" id="soundBtn" title="sound">🔇 sound</button>
     </div>
@@ -874,6 +881,41 @@ function chime(){
     o.connect(g).connect(audioCtx.destination);
     o.start(t+i*.06); o.stop(t+i*.06+1);
   });
+}
+
+/* ============================================================
+   PWA: installable app on iPhone & Android
+   ============================================================ */
+if('serviceWorker' in navigator){
+  addEventListener('load', ()=> navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+const isStandalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+const installBtn = document.getElementById('installBtn');
+let deferredInstall = null;
+
+addEventListener('beforeinstallprompt', e=>{     // Android / Chrome
+  e.preventDefault();
+  deferredInstall = e;
+  if(!isStandalone) installBtn.style.display = 'inline-block';
+});
+installBtn.onclick = async ()=>{
+  if(deferredInstall){
+    deferredInstall.prompt();
+    const {outcome} = await deferredInstall.userChoice;
+    if(outcome === 'accepted'){ installBtn.style.display='none'; toast('Installed 🛩️ find Paper Skies on your home screen.'); }
+    deferredInstall = null;
+  }else if(isIOS){
+    toast('On iPhone: tap Share ⬆️ then "Add to Home Screen" 🛩️');
+  }
+};
+// iPhone: Safari has no install prompt — show the button + a one-time hint
+if(isIOS && !isStandalone){
+  installBtn.style.display = 'inline-block';
+  if(!store.get('ps_ioshint')){
+    store.set('ps_ioshint','1');
+    setTimeout(()=>toast('📲 Make it an app: tap Share ⬆️ then "Add to Home Screen"'), 12000);
+  }
 }
 
 /* share */
